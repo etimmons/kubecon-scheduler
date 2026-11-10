@@ -1,7 +1,7 @@
 {
   "name": "spellbook",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.2",
   "type": "module",
   "description": "Offline-capable KubeCon schedule PWA with combined filters and a synced personal agenda",
   "engines": {

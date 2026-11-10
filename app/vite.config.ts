@@ -1,9 +1,13 @@
 import { defineConfig } from "vite";
+import { readFileSync } from "node:fs";
 import { VitePWA } from "vite-plugin-pwa";
+
+const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as { version: string };
 
 export default defineConfig({
   root: "app",
   base: "./",
+  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   oxc: { jsx: { runtime: "automatic", importSource: "preact" } },
   build: { outDir: "../dist/app", emptyOutDir: true, target: "es2022" },
   server: {
@@ -37,6 +41,11 @@ export default defineConfig({
         navigateFallback: "index.html",
         navigateFallbackDenylist: [/^\/api\//, /^\/sync\//, /schedule\.json$/],
         cleanupOutdatedCaches: true,
+        // vite-plugin-pwa only sets these for registerType "autoUpdate" when it injects its own
+        // register script. With injectRegister: false they must be explicit, or a new version
+        // waits until every window of the installed app is closed (on iOS: effectively never).
+        skipWaiting: true,
+        clientsClaim: true,
       },
     }),
   ],

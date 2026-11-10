@@ -107,6 +107,7 @@ export function SettingsSheet({ app }: { app: AppState }) {
         <p class="dim">
           {schedule.sessions.length} sessions, fetched {ago(schedule.scrapedAt)}. {starredCount} starred.
         </p>
+        <p class="dim">App version {__APP_VERSION__}.</p>
         <div class="btn-row">
           <button type="button" class="btn" disabled={app.refreshing} onClick={() => void refreshSchedule()}>
             {app.refreshing ? "Checking…" : "Check for updates"}

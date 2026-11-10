@@ -58,7 +58,7 @@ export function MySchedule({ app }: { app: AppState }) {
 
   return (
     <div class="view">
-      {sortedDays.length > 1 && (
+      {sortedDays.length > 0 && (
         <nav class="days mine-days" aria-label="Day">
           <button type="button" class={day === null ? "on" : ""} aria-pressed={day === null} onClick={() => navigate({ day: null })}>
             All
