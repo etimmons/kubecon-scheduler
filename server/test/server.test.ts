@@ -34,7 +34,7 @@ let base: string;
 let keeper: ScheduleKeeper;
 
 beforeAll(async () => {
-  dir = await mkdtemp(join(tmpdir(), "spellbook-"));
+  dir = await mkdtemp(join(tmpdir(), "kubecon-scheduler-"));
   keeper = new ScheduleKeeper(cfg, dir, null, fakeFetch, () => {});
   await keeper.load();
   const handler = createHandler({
@@ -165,11 +165,11 @@ describe("star sync", () => {
 
   it("device tokens work on /sync and map to the issuing user", async () => {
     const t = (await (await fetch(`${base}/api/device-token`, { method: "POST", headers: { "remote-user": "alice" } })).json()).token;
-    expect(t).toMatch(/^sb_/);
+    expect(t).toMatch(/^ks_/);
     const r = await fetch(`${base}/sync/stars?event=${cfg.id}`, { headers: { authorization: `Bearer ${t}` } });
     expect(r.status).toBe(200);
     expect((await r.json()).records.map((x: StarRecord) => x.id).sort()).toEqual(["A", "B", "C"]);
-    const bad = await fetch(`${base}/sync/stars`, { headers: { authorization: `Bearer sb_${"x".repeat(43)}` } });
+    const bad = await fetch(`${base}/sync/stars`, { headers: { authorization: `Bearer ks_${"x".repeat(43)}` } });
     expect(bad.status).toBe(401);
     // Tokens are stored hashed.
     expect(await readFile(join(dir, "tokens.json"), "utf8")).not.toContain(t);

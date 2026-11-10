@@ -3,7 +3,7 @@ import type { FilterState } from "../filters/filter.ts";
 
 // URL contract mirrors the LF schedule page: one parameter per filter group, slugged values
 // joined by "|", `search` for free text, `id` for the open session, `slides=uploaded`.
-// spellbook adds `tab`, `day` (My Schedule's day, e.g. wed-nov-11), `past=show`,
+// This app adds `tab`, `day` (My Schedule's day, e.g. wed-nov-11), `past=show`,
 // `sheet=filters|settings`, and the debug `now`.
 
 export type Tab = "schedule" | "mine" | "now";

@@ -3,27 +3,27 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: spellbook-public # app shell, schedule.json and /sync (device tokens): no login
+  name: kubecon-scheduler-public # app shell, schedule.json and /sync (device tokens): no login
 spec:
   rules:
-    - host: spellbook.example.com
+    - host: kubecon-scheduler.example.com
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
-              service: { name: spellbook, port: { name: http } }
+              service: { name: kubecon-scheduler, port: { name: http } }
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: spellbook-api # /api/*: behind Authelia forward-auth, which sets Remote-User
+  name: kubecon-scheduler-api # /api/*: behind Authelia forward-auth, which sets Remote-User
 spec:
   rules:
-    - host: spellbook.example.com
+    - host: kubecon-scheduler.example.com
       http:
         paths:
           - path: /api
             pathType: Prefix
             backend:
-              service: { name: spellbook, port: { name: http } }
+              service: { name: kubecon-scheduler, port: { name: http } }

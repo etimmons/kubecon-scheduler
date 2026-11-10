@@ -30,7 +30,7 @@ export class DeviceTokens {
   }
 
   async issue(user: string, label?: string): Promise<string> {
-    const token = `sb_${randomBytes(32).toString("base64url")}`;
+    const token = `ks_${randomBytes(32).toString("base64url")}`;
     await serialized(this.path, async () => {
       const f = (await readJson<TokenFile>(this.path)) ?? { tokens: [] };
       f.tokens.push({ hash: sha256(token), user, createdAt: new Date().toISOString(), ...(label ? { label } : {}) });
@@ -41,7 +41,7 @@ export class DeviceTokens {
 
   async verify(req: IncomingMessage): Promise<string | null> {
     const h = req.headers.authorization;
-    const m = h && /^Bearer (sb_[A-Za-z0-9_-]{20,})$/.exec(h);
+    const m = h && /^Bearer (ks_[A-Za-z0-9_-]{20,})$/.exec(h);
     if (!m) return null;
     const want = Buffer.from(sha256(m[1]), "hex");
     const f = await readJson<TokenFile>(this.path);

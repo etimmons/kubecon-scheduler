@@ -1,6 +1,6 @@
-# spellbook
+# KubeCon Scheduler
 
-An offline-capable PWA for the KubeCon + CloudNativeCon North America 2026 schedule. It filters on every facet at once, keeps your place when you open a session, and keeps a starred agenda that syncs across your own devices. See [docs/data-source.md](docs/data-source.md) for where the data comes from.
+An offline-capable PWA for the KubeCon + CloudNativeCon North America 2026 schedule. It filters on every facet at once, keeps your place when you open a session, and keeps a starred agenda that syncs across your own devices. See [DESIGN.md](DESIGN.md) for the design and [docs/data-source.md](docs/data-source.md) for where the data comes from.
 
 ## Run it
 

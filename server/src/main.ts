@@ -36,7 +36,7 @@ const handler = createHandler({
 });
 
 const server = createServer((req, res) => void handler(req, res));
-server.listen(port, () => console.log(`spellbook listening on :${port} (data ${dataDir})`));
+server.listen(port, () => console.log(`kubecon-scheduler listening on :${port} (data ${dataDir})`));
 
 for (const sig of ["SIGTERM", "SIGINT"] as const) {
   process.on(sig, () => {

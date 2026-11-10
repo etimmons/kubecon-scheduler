@@ -8,4 +8,3 @@ test-results/
 playwright-report/
 .DS_Store
 app/public/schedule.json
-DESIGN.md

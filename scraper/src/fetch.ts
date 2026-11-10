@@ -8,7 +8,7 @@ export function sessionizeUrl(cfg: EventConfig): string {
 /** One fetch of the source per run. */
 export async function fetchSchedule(cfg: EventConfig, fetchImpl: typeof fetch = fetch): Promise<ScheduleFile> {
   const res = await fetchImpl(sessionizeUrl(cfg), {
-    headers: { accept: "application/json", "user-agent": "spellbook-schedule/0.1" },
+    headers: { accept: "application/json", "user-agent": "kubecon-scheduler/0.1" },
     signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) throw new Error(`Sessionize ${res.status} ${res.statusText}`);

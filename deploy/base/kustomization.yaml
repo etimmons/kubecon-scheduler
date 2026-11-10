@@ -1,9 +1,9 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: spellbook
+namespace: kubecon-scheduler
 labels:
   - pairs:
-      app.kubernetes.io/name: spellbook
+      app.kubernetes.io/name: kubecon-scheduler
     includeSelectors: true
 resources:
   - namespace.yaml
@@ -12,4 +12,4 @@ resources:
   - service.yaml
   - ingress.yaml
   - networkpolicy.yaml
-# The Deployment's image is the bare name "spellbook"; each overlay sets it with `images:`.
+# The Deployment's image is the bare name "kubecon-scheduler"; each overlay sets it with `images:`.

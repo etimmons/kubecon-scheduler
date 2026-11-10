@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: spellbook
+  name: kubecon-scheduler
 spec:
   type: ClusterIP
   ports:

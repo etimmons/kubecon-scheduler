@@ -5,6 +5,7 @@ import { buildSearch, parseRoute, type Route } from "../routes/url.ts";
 import { syncStars } from "../sync/sync.ts";
 import {
   cachedSchedule,
+  cleanupOldCaches,
   loadDeviceToken,
   loadStars,
   loadSyncMeta,
@@ -139,6 +140,7 @@ export async function boot(): Promise<void> {
   if (p && !Number.isNaN(Date.parse(p))) clockOffset = Date.parse(p) - Date.now();
   set({ nowMs: nowMs() });
 
+  void cleanupOldCaches();
   const cached = await cachedSchedule();
   if (cached) applySchedule(cached);
   const net = refreshSchedule();
@@ -185,7 +187,7 @@ export function navigate(patch: Partial<Route>, mode: Mode = "replace") {
   if (!state.schedule) return;
   const route = { ...state.route, ...patch };
   const url = location.pathname + buildSearch(route, state.schedule.facets, state.defaultShowPast) + location.hash;
-  if (mode === "push") history.pushState({ spellbook: true }, "", url);
+  if (mode === "push") history.pushState({ sheet: true }, "", url);
   else history.replaceState(history.state, "", url);
   set({ route });
 }
@@ -202,7 +204,7 @@ export function openDetail(id: string, context: string[] | null) {
 
 /** Close a sheet: go back if we pushed it (so browser back and the button agree), else replace. */
 export function closeSheet(which: "detail" | "sheet", then?: () => void) {
-  const pushed = (history.state as { spellbook?: boolean } | null)?.spellbook;
+  const pushed = (history.state as { sheet?: boolean } | null)?.sheet;
   if (pushed) {
     // The boot-time popstate listener runs first and restores the route; then `then`.
     if (then) window.addEventListener("popstate", () => then(), { once: true });

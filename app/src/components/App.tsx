@@ -42,7 +42,7 @@ export function App() {
   }, [scrollKey]);
 
   useEffect(() => {
-    document.title = schedule ? `spellbook · ${schedule.event.name}` : "spellbook";
+    document.title = schedule ? `KubeCon Scheduler · ${schedule.event.name}` : "KubeCon Scheduler";
   }, [schedule]);
 
   if (!schedule) {
@@ -60,8 +60,8 @@ export function App() {
   return (
     <>
       <header class="appbar">
-        <span class="brand">spellbook</span>
-        <span class="dim event">{schedule.event.name.replace("KubeCon + CloudNativeCon", "KubeCon")}</span>
+        <span class="brand">KubeCon Scheduler</span>
+        <span class="dim event">{schedule.event.name.replace(/^KubeCon \+ CloudNativeCon\s*/, "")}</span>
         <button type="button" class={`icon-btn${syncBad ? " attn" : ""}`} aria-label="Sync and settings" onClick={() => openSheet("settings")}>
           ⚙︎
         </button>

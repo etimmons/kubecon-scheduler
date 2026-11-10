@@ -37,8 +37,10 @@ export interface SyncMeta {
 export const loadSyncMeta = (eventId: string) => read<SyncMeta>(`sync:${eventId}`, {});
 export const saveSyncMeta = (eventId: string, m: SyncMeta) => write(`sync:${eventId}`, m);
 
-export const loadDeviceToken = () => read<string | null>("spellbook:device-token", null);
-export const saveDeviceToken = (t: string | null) => write("spellbook:device-token", t);
+const TOKEN_KEY = "kubecon-scheduler:device-token";
+// Read the pre-rename key too, so a saved device token survives the rename.
+export const loadDeviceToken = () => read<string | null>(TOKEN_KEY, null) ?? read<string | null>("spellbook:device-token", null);
+export const saveDeviceToken = (t: string | null) => write(TOKEN_KEY, t);
 
 // Scroll memory, per view, for the tab's lifetime.
 export function loadScroll(key: string): number | null {
@@ -59,7 +61,17 @@ export function saveScroll(key: string, y: number): void {
 
 // The schedule itself lives in Cache Storage (app-managed stale-while-revalidate),
 // so the first paint uses the last good copy and the network refresh happens behind it.
-const SCHEDULE_CACHE = "spellbook-schedule-v1";
+const SCHEDULE_CACHE = "kubecon-scheduler-schedule-v1";
+const OLD_CACHES = ["spellbook-schedule-v1"]; // pre-rename name
+
+/** Drop schedule caches left by earlier names. */
+export async function cleanupOldCaches(): Promise<void> {
+  try {
+    if (typeof caches !== "undefined") await Promise.all(OLD_CACHES.map((c) => caches.delete(c)));
+  } catch {
+    /* ignore */
+  }
+}
 const SCHEDULE_URL = "schedule.json";
 
 export async function cachedSchedule(): Promise<ScheduleFile | null> {

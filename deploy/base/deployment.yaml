@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: spellbook
+  name: kubecon-scheduler
 spec:
   replicas: 1
   strategy:
@@ -16,8 +16,8 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       containers:
-        - name: spellbook
-          image: spellbook
+        - name: kubecon-scheduler
+          image: kubecon-scheduler
           ports:
             - name: http
               containerPort: 8080
@@ -45,6 +45,6 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: spellbook-data
+            claimName: kubecon-scheduler-data
         - name: tmp
           emptyDir: {}

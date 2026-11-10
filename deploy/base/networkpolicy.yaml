@@ -2,7 +2,7 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: spellbook
+  name: kubecon-scheduler
 spec:
   podSelector: {}
   policyTypes: [Ingress]

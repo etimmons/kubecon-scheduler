@@ -5,33 +5,33 @@ resources:
   - ../../base
   - middlewares.yaml
 images:
-  - name: spellbook
-    newName: ghcr.io/OWNER/spellbook
+  - name: kubecon-scheduler
+    newName: ghcr.io/OWNER/kubecon-scheduler
     newTag: main
 patches:
   - target: { kind: Ingress }
     patch: |
       - op: replace
         path: /spec/rules/0/host
-        value: spellbook.example.com
-  - target: { kind: Ingress, name: spellbook-api }
+        value: kubecon-scheduler.example.com
+  - target: { kind: Ingress, name: kubecon-scheduler-api }
     patch: |
       - op: add
         path: /metadata/annotations
         value:
           traefik.ingress.kubernetes.io/router.middlewares: authelia-forwardauth-authelia@kubernetescrd
-  - target: { kind: Ingress, name: spellbook-public }
+  - target: { kind: Ingress, name: kubecon-scheduler-public }
     patch: |
       - op: add
         path: /metadata/annotations
         value:
-          traefik.ingress.kubernetes.io/router.middlewares: spellbook-strip-remote-user@kubernetescrd
-  - target: { kind: PersistentVolumeClaim, name: spellbook-data }
+          traefik.ingress.kubernetes.io/router.middlewares: kubecon-scheduler-strip-remote-user@kubernetescrd
+  - target: { kind: PersistentVolumeClaim, name: kubecon-scheduler-data }
     patch: |
       - op: add
         path: /spec/storageClassName
         value: ceph-rbd
-  - target: { kind: NetworkPolicy, name: spellbook }
+  - target: { kind: NetworkPolicy, name: kubecon-scheduler }
     patch: |
       - op: replace
         path: /spec/ingress/0/from/0/namespaceSelector/matchLabels/kubernetes.io~1metadata.name

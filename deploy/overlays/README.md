@@ -14,7 +14,7 @@ Checklist:
 - The public route must **strip** any client-sent `Remote-User` header. The server only reads it
   on `/api/*` and rejects odd paths (`//`, `%`, `..`), but stripping it at the edge closes the gap
   if an ingress ever routes a path differently than the server.
-- Put the forward-auth annotations or middleware on the `spellbook-api` Ingress only. The public
+- Put the forward-auth annotations or middleware on the `kubecon-scheduler-api` Ingress only. The public
   Ingress never reaches Authelia, so Authelia needs a rule that covers the host (an existing
   wildcard rule is enough) but no `bypass` rule.
 - If your controller can't strip request headers on the public route (for example Traefik serving

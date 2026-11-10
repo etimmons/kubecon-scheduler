@@ -19,8 +19,8 @@ export default defineConfig({
       injectRegister: false,
       includeAssets: ["icon.svg", "apple-touch-icon.png"],
       manifest: {
-        name: "spellbook: KubeCon schedule",
-        short_name: "spellbook",
+        name: "KubeCon Scheduler",
+        short_name: "KubeCon",
         description: "KubeCon schedule with combined filters, a starred agenda and offline use.",
         start_url: "./",
         scope: "./",

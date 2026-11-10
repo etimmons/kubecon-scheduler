@@ -42,7 +42,7 @@ The LF page builds its filters on the client from the API's category groups, and
 | `location` | Derived: the full room path | The LF Location slugs are unverified (its options were collapsed) |
 | `slides` | `uploaded` when a Presentation Slides answer exists | Same as LF `slides=uploaded` |
 
-The LF page uses `search` for free text and `id` for the open session, and spellbook uses the same names, so a URL works on both sites. This replaces the `q` and `s` placeholders in DESIGN.md.
+The LF page uses `search` for free text and `id` for the open session, and this app uses the same names, so a URL works on both sites. This replaces the `q` and `s` placeholders in DESIGN.md.
 
 ## Fallbacks
 
