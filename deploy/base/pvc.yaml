@@ -1,0 +1,11 @@
+# schedule.json, its last good copy, stars/<user>.json and tokens.json. A few MB at most.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: spellbook-data
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+  # storageClassName: set in your overlay (e.g. a Ceph RBD class)

@@ -1,0 +1,10 @@
+node_modules/
+dist/
+data/
+deploy/overlays/*
+!deploy/overlays/README.md
+!deploy/overlays/example/
+test-results/
+playwright-report/
+.DS_Store
+app/public/schedule.json

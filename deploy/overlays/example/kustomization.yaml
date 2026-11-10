@@ -1,0 +1,38 @@
+# Example overlay for Traefik + Authelia. Copy to deploy/overlays/<name>/ (gitignored) and edit.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+  - middlewares.yaml
+images:
+  - name: spellbook
+    newName: ghcr.io/OWNER/spellbook
+    newTag: main
+patches:
+  - target: { kind: Ingress }
+    patch: |
+      - op: replace
+        path: /spec/rules/0/host
+        value: spellbook.example.com
+  - target: { kind: Ingress, name: spellbook-api }
+    patch: |
+      - op: add
+        path: /metadata/annotations
+        value:
+          traefik.ingress.kubernetes.io/router.middlewares: authelia-forwardauth-authelia@kubernetescrd
+  - target: { kind: Ingress, name: spellbook-public }
+    patch: |
+      - op: add
+        path: /metadata/annotations
+        value:
+          traefik.ingress.kubernetes.io/router.middlewares: spellbook-strip-remote-user@kubernetescrd
+  - target: { kind: PersistentVolumeClaim, name: spellbook-data }
+    patch: |
+      - op: add
+        path: /spec/storageClassName
+        value: ceph-rbd
+  - target: { kind: NetworkPolicy, name: spellbook }
+    patch: |
+      - op: replace
+        path: /spec/ingress/0/from/0/namespaceSelector/matchLabels/kubernetes.io~1metadata.name
+        value: kube-system

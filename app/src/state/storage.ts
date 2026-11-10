@@ -1,0 +1,88 @@
+import type { ScheduleFile, StarRecord } from "../../../shared/types.ts";
+import type { StarMap } from "./stars.ts";
+
+// Every storage call is wrapped: private mode, quota or blocked storage must never break the app.
+
+function read<T>(key: string, fallback: T): T {
+  try {
+    const v = localStorage.getItem(key);
+    return v ? (JSON.parse(v) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+function write(key: string, value: unknown): void {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function loadStars(eventId: string): StarMap {
+  const list = read<StarRecord[]>(`stars:${eventId}`, []);
+  const m: StarMap = {};
+  for (const r of Array.isArray(list) ? list : []) if (r && r.id) m[r.id] = r;
+  return m;
+}
+export function saveStars(eventId: string, stars: StarMap): void {
+  write(`stars:${eventId}`, Object.values(stars));
+}
+
+export interface SyncMeta {
+  lastSync?: string;
+  user?: string;
+  dirty?: boolean; // local changes not yet pushed
+}
+export const loadSyncMeta = (eventId: string) => read<SyncMeta>(`sync:${eventId}`, {});
+export const saveSyncMeta = (eventId: string, m: SyncMeta) => write(`sync:${eventId}`, m);
+
+export const loadDeviceToken = () => read<string | null>("spellbook:device-token", null);
+export const saveDeviceToken = (t: string | null) => write("spellbook:device-token", t);
+
+// Scroll memory, per view, for the tab's lifetime.
+export function loadScroll(key: string): number | null {
+  try {
+    const v = sessionStorage.getItem(`scroll:${key}`);
+    return v == null ? null : Number(v);
+  } catch {
+    return null;
+  }
+}
+export function saveScroll(key: string, y: number): void {
+  try {
+    sessionStorage.setItem(`scroll:${key}`, String(Math.round(y)));
+  } catch {
+    /* ignore */
+  }
+}
+
+// The schedule itself lives in Cache Storage (app-managed stale-while-revalidate),
+// so the first paint uses the last good copy and the network refresh happens behind it.
+const SCHEDULE_CACHE = "spellbook-schedule-v1";
+const SCHEDULE_URL = "schedule.json";
+
+export async function cachedSchedule(): Promise<ScheduleFile | null> {
+  try {
+    if (typeof caches === "undefined") return null;
+    const c = await caches.open(SCHEDULE_CACHE);
+    const res = await c.match(SCHEDULE_URL);
+    return res ? ((await res.json()) as ScheduleFile) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function networkSchedule(): Promise<ScheduleFile> {
+  const res = await fetch(SCHEDULE_URL, { cache: "no-cache", headers: { accept: "application/json" } });
+  if (!res.ok) throw new Error(`schedule.json ${res.status}`);
+  const copy = res.clone();
+  const data = (await res.json()) as ScheduleFile;
+  if (data?.schemaVersion !== 1 || !Array.isArray(data.sessions)) throw new Error("bad schedule.json");
+  try {
+    if (typeof caches !== "undefined") await (await caches.open(SCHEDULE_CACHE)).put(SCHEDULE_URL, copy);
+  } catch {
+    /* ignore */
+  }
+  return data;
+}

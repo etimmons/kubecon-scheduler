@@ -1,0 +1,82 @@
+{
+  "id": "kccncna2026",
+  "name": "KubeCon + CloudNativeCon North America 2026",
+  "timeZone": "America/Denver",
+  "sourceUrl": "https://events.linuxfoundation.org/kubecon-cloudnativecon-north-america/program/schedule/",
+  "sessionizeApiCode": "svi82w6c",
+  "dates": [
+    "2026-11-08",
+    "2026-11-09",
+    "2026-11-10",
+    "2026-11-11",
+    "2026-11-12"
+  ],
+  "facetGroups": [
+    {
+      "title": "All Sessions",
+      "key": "all-sessions",
+      "label": "Category",
+      "colors": true
+    },
+    {
+      "title": "Audience Level",
+      "key": "audience-level",
+      "label": "Audience level"
+    },
+    {
+      "title": "CNCF Projects",
+      "key": "cncf-projects",
+      "label": "Project"
+    },
+    {
+      "title": "SubTopic",
+      "key": "subtopic",
+      "label": "Tags"
+    },
+    {
+      "title": "End User Programming",
+      "key": "end-user-programming"
+    },
+    {
+      "title": "Solutions Showcase Programming",
+      "key": "solutions-showcase-programming"
+    },
+    {
+      "title": "Is Sponsored Keynote",
+      "key": "sponsored",
+      "label": "Sponsored"
+    }
+  ],
+  "colors": {
+    "Cloud Native Experience": "#8b26d9",
+    "Cloud Native Novice": "#d97126",
+    "Emerging + Advanced": "#d98e26",
+    "Keynote Sessions": "#d9ac26",
+    "Observability": "#d9263b",
+    "Operations + Performance": "#d9269a",
+    "Platform Engineering": "#ca26d9",
+    "Registration": "#8b26d9",
+    "Maintainer Track": "#2926d9",
+    "⚡ Lightning Talks": "#d9d026",
+    "AI Inference + Agentic": "#2656d9",
+    "Application Development + Delivery": "#26d926",
+    "Connectivity": "#26d988",
+    "Data Processing + Storage": "#26d9be",
+    "Security": "#26d0d9",
+    "📚 Tutorials": "#26b5d9",
+    "🚨 Contribfest": "#2697d9",
+    "🪧 Poster Sessions": "#2677d9",
+    "Experiences": "#d92665",
+    "Project Opportunities": "#d94d26",
+    "Project Lightning Talks": "#d94d26",
+    "Project Pavilion Tours": "#d94d26",
+    "Inclusion + Accessibility": "#d9d026",
+    "Solutions Showcase": "#d94d26",
+    "Sponsor-hosted Co-located Events": "#d92665",
+    "CNCF-hosted Co-located Events": "#d92665",
+    "Cloud Native Theater": "#d94d26",
+    "Breaks": "#a6d926",
+    "Sponsor Demo Theater": "#815731",
+    "Project Pavilion Stage": "#d94d26"
+  }
+}
