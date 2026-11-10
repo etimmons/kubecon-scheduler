@@ -69,3 +69,33 @@ test("stars persist across reloads and show in My Schedule", async ({ page }) =>
   await page.getByRole("button", { name: /^My Schedule/ }).click();
   await expect(page.locator(".row-title").first()).toHaveText(title);
 });
+
+test("My Schedule filters by day", async ({ page }) => {
+  await page.goto(`/?${NOW}&date=tue-nov-10`);
+  await page.locator(".row").nth(0).locator(".star").click();
+  await page.locator(".row").nth(1).locator(".star").click();
+  await page.getByRole("button", { name: /^Wed/ }).click();
+  await page.locator(".row").nth(0).locator(".star").click();
+
+  await page.getByRole("button", { name: /^My Schedule/ }).click();
+  const days = page.getByRole("navigation", { name: "Day" });
+  await expect(days.getByRole("button")).toHaveText(["All3", /^TueNov 10 · 2$/, /^WedNov 11 · 1$/]);
+  await expect(page.locator(".row")).toHaveCount(3);
+
+  await days.getByRole("button", { name: /^Tue/ }).click();
+  expect(page.url()).toContain("day=tue-nov-10");
+  await expect(page.locator(".row")).toHaveCount(2);
+  await expect(page.locator(".day-head")).toHaveText([/^Tue Nov 10/]);
+
+  // Survives a reload, and doesn't touch the Schedule tab's own date filter.
+  await page.reload();
+  await expect(page.locator(".row")).toHaveCount(2);
+  await days.getByRole("button", { name: /^Wed/ }).click();
+  await expect(page.locator(".row")).toHaveCount(1);
+  await page.getByRole("button", { name: /^Schedule/ }).click();
+  await expect(page.getByRole("navigation", { name: "Day" }).getByRole("button", { name: /^Wed/ })).toHaveClass(/on/);
+
+  await page.getByRole("button", { name: /^My Schedule/ }).click();
+  await days.getByRole("button", { name: /^All/ }).click();
+  await expect(page.locator(".row")).toHaveCount(3);
+});

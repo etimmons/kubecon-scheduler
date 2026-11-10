@@ -19,7 +19,8 @@ const TABS: { tab: Tab; label: string }[] = [
 export function App() {
   const app = useApp();
   const { route, schedule } = app;
-  const scrollKey = schedule ? `${route.tab}:${route.tab === "schedule" ? filterKey(route.filters) : ""}` : "";
+  const viewKey = route.tab === "schedule" ? filterKey(route.filters) : route.tab === "mine" ? (route.day ?? "") : "";
+  const scrollKey = schedule ? `${route.tab}:${viewKey}` : "";
   const keyRef = useRef(scrollKey);
   keyRef.current = scrollKey;
 

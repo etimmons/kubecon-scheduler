@@ -37,6 +37,7 @@ export interface AppState {
 const emptyRoute: Route = {
   filters: { sel: {}, search: "", showPast: false },
   tab: "schedule",
+  day: null,
   id: null,
   sheet: null,
   now: null,

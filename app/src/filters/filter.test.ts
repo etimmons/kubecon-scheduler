@@ -136,6 +136,13 @@ describe("URL contract", () => {
     expect(r).toMatchObject({ tab: "mine", id: "1234985", filters: { search: "ebpf", showPast: true } });
     expect(buildSearch(r, real.facets, false)).toBe(search);
   });
+  it("keeps My Schedule's day separate from the Schedule date filter", () => {
+    const r = parseRoute("?tab=mine&day=wed-nov-11&date=thu-nov-12", real.facets, false);
+    expect(r.day).toBe("wed-nov-11");
+    expect(r.filters.sel.date).toEqual(["thu-nov-12"]);
+    expect(buildSearch(r, real.facets, false)).toBe("?tab=mine&day=wed-nov-11&date=thu-nov-12");
+    expect(parseRoute("?day=<script>", real.facets, false).day).toBeNull();
+  });
   it("accepts the design doc's q and s aliases and drops unknown slugs", () => {
     const r = parseRoute("?q=ebpf&s=42&all-sessions=security|not-a-category", real.facets, false);
     expect(r.filters.search).toBe("ebpf");

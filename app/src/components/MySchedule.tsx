@@ -1,23 +1,42 @@
 import { useMemo } from "preact/hooks";
+import { slug } from "../../../shared/slug.ts";
 import { dayLabel, eventDate } from "../../../shared/time.ts";
 import type { Indexed } from "../filters/filter.ts";
 import { dayTime, facetLookup, fullWhen } from "../format.ts";
 import { orphans, overlaps } from "../state/stars.ts";
-import { dismiss, openDetail, type AppState } from "../state/store.ts";
+import { dismiss, navigate, openDetail, type AppState } from "../state/store.ts";
 import { SessionRow } from "./SessionRow.tsx";
 import { StarButton } from "./StarButton.tsx";
 
 export function MySchedule({ app }: { app: AppState }) {
   const tz = app.schedule!.event.timeZone;
   const lookup = useMemo(() => facetLookup(app.schedule!.facets), [app.schedule]);
-  const starred: Indexed[] = Object.values(app.stars)
+  const daySlug = (iso: string) => slug(dayLabel(eventDate(iso, tz)));
+  const allStarred: Indexed[] = Object.values(app.stars)
     .filter((r) => r.starred)
     .map((r) => app.ixById.get(r.id))
     .filter((x): x is Indexed => !!x)
     .sort((a, b) => a.startMs - b.startMs || a.endMs - b.endMs);
-  const clash = overlaps(starred.map((i) => ({ id: i.s.id, startMs: i.startMs, endMs: i.endMs })));
+  const allGone = orphans(app.stars, app.byId);
+
+  // Day tabs: only days that have something starred, with counts. Keyed by YYYY-MM-DD so they sort.
+  const days = new Map<string, { slug: string; label: string; count: number }>();
+  for (const iso of [...allStarred.map((i) => i.s.start), ...allGone.map((r) => r.snapshot.start)]) {
+    const ymd = eventDate(iso, tz);
+    const d = days.get(ymd) ?? { slug: slug(dayLabel(ymd)), label: dayLabel(ymd), count: 0 };
+    d.count++;
+    days.set(ymd, d);
+  }
+  const sortedDays = [...days.keys()].sort().map((k) => days.get(k)!);
+  // An unknown or now-empty day falls back to All.
+  const day = app.route.day && sortedDays.some((d) => d.slug === app.route.day) ? app.route.day : null;
+  const onDay = (iso: string) => !day || daySlug(iso) === day;
+
+  const starred = allStarred.filter((i) => onDay(i.s.start));
+  const gone = allGone.filter((r) => onDay(r.snapshot.start));
+  // Overlaps only happen within a day, so flagging against all stars is the same as per day.
+  const clash = overlaps(allStarred.map((i) => ({ id: i.s.id, startMs: i.startMs, endMs: i.endMs })));
   const changed = starred.filter((i) => app.stars[i.s.id]?.changedFrom);
-  const gone = orphans(app.stars, app.byId);
   const ids = starred.map((i) => i.s.id);
 
   const byDay = new Map<string, Indexed[]>();
@@ -26,7 +45,7 @@ export function MySchedule({ app }: { app: AppState }) {
     byDay.set(d, [...(byDay.get(d) ?? []), ix]);
   }
 
-  if (!starred.length && !gone.length) {
+  if (!allStarred.length && !allGone.length) {
     return (
       <div class="view">
         <div class="empty">
@@ -39,6 +58,22 @@ export function MySchedule({ app }: { app: AppState }) {
 
   return (
     <div class="view">
+      {sortedDays.length > 1 && (
+        <nav class="days mine-days" aria-label="Day">
+          <button type="button" class={day === null ? "on" : ""} aria-pressed={day === null} onClick={() => navigate({ day: null })}>
+            All
+            <small>{allStarred.length + allGone.length}</small>
+          </button>
+          {sortedDays.map((d) => (
+            <button key={d.slug} type="button" class={day === d.slug ? "on" : ""} aria-pressed={day === d.slug} onClick={() => navigate({ day: d.slug })}>
+              {d.label.split(" ")[0]}
+              <small>
+                {d.label.split(" ").slice(1).join(" ")} · {d.count}
+              </small>
+            </button>
+          ))}
+        </nav>
+      )}
       {changed.length > 0 && (
         <section class="notice-group" aria-label="Changed">
           <h2 class="day-head warn-text">Changed</h2>
