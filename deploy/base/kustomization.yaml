@@ -12,7 +12,4 @@ resources:
   - service.yaml
   - ingress.yaml
   - networkpolicy.yaml
-images:
-  - name: spellbook
-    newName: ghcr.io/OWNER/spellbook # set in your overlay
-    newTag: main
+# The Deployment's image is the bare name "spellbook"; each overlay sets it with `images:`.
