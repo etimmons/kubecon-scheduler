@@ -56,12 +56,13 @@ Pick one. All of them run the same app; they differ in where stars are kept.
 | --- | --- | --- | --- |
 | **Docker Compose** | Yes, invite links | A machine with Docker and a hostname | [deploy/compose](deploy/compose/README.md) |
 | **Fly.io** | Yes, invite links | A Fly account (a few dollars a month) | [deploy/fly](deploy/fly/README.md) |
-| **Vercel** | No, stars stay on each device | A Vercel account and this repo | below |
 | **GitHub Pages** | No, stars stay on each device | A fork of this repo | below |
+| **Vercel** | No, stars stay on each device | A fork and a Vercel account (free plan) | [deploy/vercel](deploy/vercel/README.md) |
 | **Kubernetes** | Yes, your SSO (Authelia) or invite links | A cluster | [deploy/overlays](deploy/overlays/README.md) |
 
 The image is `ghcr.io/runlevel-six/kubecon-scheduler`, multi-arch, built by GitHub Actions on every
-push to `main` (tag `main`) and release (tags like `v0.4.0`).
+push to `main` (tag `main`) and release (tags like `v0.4.2`). `latest` always points at the most
+recent release.
 
 **Sync and sign-in.** By default (`AUTH=token`) nobody signs in: you create an invite per person with
 `node server/src/admin.ts invite <name>`, and opening the link signs that device in. That is safe on any
@@ -72,7 +73,8 @@ is only safe when that proxy is the only way to reach the server; the Kubernetes
 (`.`). The committed `vercel.json` selects Vite, runs `npm run build:static`, and serves `dist/app`.
 Use Node.js 24 or newer. The static build fetches the current schedule and writes `app-config.json`
 with sync disabled; no environment variables are required for the default event. A failed schedule
-fetch fails the deployment, so Vercel keeps serving the previous successful deployment.
+fetch fails the deployment, so Vercel keeps serving the previous successful deployment. See the
+[Vercel guide](deploy/vercel/README.md) for deployment steps and optional hourly schedule refreshes.
 
 The regular `npm run build` only builds the interface. Publishing `dist` instead of `dist/app`
 puts the interface at `/app/` and leaves `/` returning 404; omitting the scrape leaves the app

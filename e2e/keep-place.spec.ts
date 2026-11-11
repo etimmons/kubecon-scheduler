@@ -83,7 +83,9 @@ test("My Schedule filters by day", async ({ page }) => {
   // Opens on today's tab by default (the clock says Tue).
   await expect(days.getByRole("button", { name: /^Tue/ })).toHaveAttribute("aria-pressed", "true");
   await expect(page.locator(".row")).toHaveCount(2);
-  await expect(page.locator(".day-head")).toHaveText([/^Tue Nov 10/]);
+  await expect(page.locator(".day-head")).toHaveText([/^Tue Nov 10 · 2$/]);
+  // Blocked off by time slot, like the Schedule tab.
+  await expect(page.locator(".time-head").first()).toBeVisible();
 
   await days.getByRole("button", { name: /^All/ }).click();
   expect(page.url()).toContain("day=all");

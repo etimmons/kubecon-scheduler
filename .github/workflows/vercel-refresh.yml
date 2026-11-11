@@ -1,0 +1,19 @@
+# Hourly rebuild of a Vercel deployment so it picks up schedule changes. See deploy/vercel/README.md.
+# Off unless you opt in: secret VERCEL_DEPLOY_HOOK (a Vercel deploy hook URL) and variable VERCEL = on.
+name: vercel-refresh
+
+on:
+  schedule:
+    - cron: "23 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  rebuild:
+    if: vars.VERCEL == 'on'
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -fsS -X POST "$HOOK"
+        env:
+          HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
