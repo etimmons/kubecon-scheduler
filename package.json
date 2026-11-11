@@ -1,7 +1,7 @@
 {
   "name": "kubecon-scheduler",
   "private": true,
-  "version": "0.4.1",
+  "version": "0.4.2",
   "type": "module",
   "description": "Offline-capable KubeCon schedule PWA with combined filters and a synced personal agenda",
   "engines": {

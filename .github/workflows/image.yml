@@ -13,6 +13,11 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Chromium and its system packages come preinstalled, so the job doesn't depend on reaching the
+    # Ubuntu package mirrors (an apt step there once hung for hours). Keep the tag in step with
+    # @playwright/test in package.json.
+    container: mcr.microsoft.com/playwright:v1.65.0-resolute
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -22,7 +27,6 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
-      - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
         env:
           CI: "true"
