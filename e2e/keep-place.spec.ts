@@ -80,12 +80,18 @@ test("My Schedule filters by day", async ({ page }) => {
   await page.getByRole("button", { name: /^My Schedule/ }).click();
   const days = page.getByRole("navigation", { name: "Day" });
   await expect(days.getByRole("button")).toHaveText(["All3", /^TueNov 10 · 2$/, /^WedNov 11 · 1$/]);
+  // Opens on today's tab by default (the clock says Tue).
+  await expect(days.getByRole("button", { name: /^Tue/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".row")).toHaveCount(2);
+  await expect(page.locator(".day-head")).toHaveText([/^Tue Nov 10/]);
+
+  await days.getByRole("button", { name: /^All/ }).click();
+  expect(page.url()).toContain("day=all");
   await expect(page.locator(".row")).toHaveCount(3);
 
   await days.getByRole("button", { name: /^Tue/ }).click();
   expect(page.url()).toContain("day=tue-nov-10");
   await expect(page.locator(".row")).toHaveCount(2);
-  await expect(page.locator(".day-head")).toHaveText([/^Tue Nov 10/]);
 
   // Survives a reload, and doesn't touch the Schedule tab's own date filter.
   await page.reload();
@@ -98,4 +104,13 @@ test("My Schedule filters by day", async ({ page }) => {
   await page.getByRole("button", { name: /^My Schedule/ }).click();
   await days.getByRole("button", { name: /^All/ }).click();
   await expect(page.locator(".row")).toHaveCount(3);
+});
+
+test("My Schedule falls back to All when today has nothing starred", async ({ page }) => {
+  await page.goto(`/?${NOW}&date=wed-nov-11`);
+  await page.waitForSelector(".row");
+  await page.locator(".row").nth(0).locator(".star").click();
+  await page.getByRole("button", { name: /^My Schedule/ }).click();
+  await expect(page.getByRole("navigation", { name: "Day" }).getByRole("button", { name: /^All/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".row")).toHaveCount(1);
 });

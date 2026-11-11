@@ -3,7 +3,7 @@ import type { FilterState } from "../filters/filter.ts";
 
 // URL contract mirrors the LF schedule page: one parameter per filter group, slugged values
 // joined by "|", `search` for free text, `id` for the open session, `slides=uploaded`.
-// This app adds `tab`, `day` (My Schedule's day, e.g. wed-nov-11), `past=show`,
+// This app adds `tab`, `day` (My Schedule's day, e.g. wed-nov-11, or all), `past=show`,
 // `sheet=filters|settings`, and the debug `now`.
 
 export type Tab = "schedule" | "mine" | "now";
@@ -12,7 +12,10 @@ export type Sheet = "filters" | "settings" | null;
 export interface Route {
   filters: FilterState;
   tab: Tab;
-  /** My Schedule's day tab, as a date slug; null = all days. Separate from the Schedule tab's date filter. */
+  /**
+   * My Schedule's day tab: a date slug, "all", or null for the default (today, during the event).
+   * Separate from the Schedule tab's date filter.
+   */
   day: string | null;
   id: string | null;
   sheet: Sheet;
@@ -39,7 +42,7 @@ export function parseRoute(search: string, facets: FacetDef[], defaultShowPast: 
       showPast: past === "show" ? true : past === "hide" ? false : defaultShowPast,
     },
     tab: tab === "mine" || tab === "now" ? tab : "schedule",
-    day: /^[a-z]{3}-[a-z]{3}-\d{1,2}$/.test(p.get("day") ?? "") ? p.get("day") : null,
+    day: /^([a-z]{3}-[a-z]{3}-\d{1,2}|all)$/.test(p.get("day") ?? "") ? p.get("day") : null,
     id: p.get("id") ?? p.get("s"),
     sheet: sheet === "filters" || sheet === "settings" ? sheet : null,
     now: p.get("now"),

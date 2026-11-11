@@ -29,8 +29,10 @@ export function MySchedule({ app }: { app: AppState }) {
     days.set(ymd, d);
   }
   const sortedDays = [...days.keys()].sort().map((k) => days.get(k)!);
-  // An unknown or now-empty day falls back to All.
-  const day = app.route.day && sortedDays.some((d) => d.slug === app.route.day) ? app.route.day : null;
+  // No explicit choice: today's tab if today has anything starred, else All.
+  // An unknown or now-empty day also falls back to All.
+  const wanted = app.route.day ?? daySlug(new Date(app.nowMs).toISOString());
+  const day = wanted !== "all" && sortedDays.some((d) => d.slug === wanted) ? wanted : null;
   const onDay = (iso: string) => !day || daySlug(iso) === day;
 
   const starred = allStarred.filter((i) => onDay(i.s.start));
@@ -62,7 +64,7 @@ export function MySchedule({ app }: { app: AppState }) {
     <div class="view">
       {sortedDays.length > 0 && (
         <nav class="days mine-days" aria-label="Day">
-          <button type="button" class={day === null ? "on" : ""} aria-pressed={day === null} onClick={() => navigate({ day: null })}>
+          <button type="button" class={day === null ? "on" : ""} aria-pressed={day === null} onClick={() => navigate({ day: "all" })}>
             All
             <small>{allStarred.length + allGone.length}</small>
           </button>

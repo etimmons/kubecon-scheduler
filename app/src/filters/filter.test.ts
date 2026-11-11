@@ -142,6 +142,8 @@ describe("URL contract", () => {
     expect(r.filters.sel.date).toEqual(["thu-nov-12"]);
     expect(buildSearch(r, real.facets, false)).toBe("?tab=mine&day=wed-nov-11&date=thu-nov-12");
     expect(parseRoute("?day=<script>", real.facets, false).day).toBeNull();
+    expect(parseRoute("?tab=mine&day=all", real.facets, false).day).toBe("all");
+    expect(buildSearch(parseRoute("?tab=mine&day=all", real.facets, false), real.facets, false)).toBe("?tab=mine&day=all");
   });
   it("accepts the design doc's q and s aliases and drops unknown slugs", () => {
     const r = parseRoute("?q=ebpf&s=42&all-sessions=security|not-a-category", real.facets, false);
