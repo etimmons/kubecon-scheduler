@@ -42,22 +42,31 @@ const TOKEN_KEY = "kubecon-scheduler:device-token";
 export const loadDeviceToken = () => read<string | null>(TOKEN_KEY, null) ?? read<string | null>("spellbook:device-token", null);
 export const saveDeviceToken = (t: string | null) => write(TOKEN_KEY, t);
 
-// Scroll memory, per view, for the tab's lifetime.
+// Scroll memory, per view, for the tab's lifetime. A position older than SCROLL_TTL is
+// treated as unset, so coming back to the app later opens the list at the current time.
+const SCROLL_TTL = 15 * 60_000;
 export function loadScroll(key: string): number | null {
   try {
     const v = sessionStorage.getItem(`scroll:${key}`);
-    return v == null ? null : Number(v);
+    if (v == null) return null;
+    const { y, at } = JSON.parse(v) as { y: number; at: number };
+    return typeof y === "number" && Date.now() - at < SCROLL_TTL ? y : null;
   } catch {
     return null;
   }
 }
 export function saveScroll(key: string, y: number): void {
   try {
-    sessionStorage.setItem(`scroll:${key}`, String(Math.round(y)));
+    sessionStorage.setItem(`scroll:${key}`, JSON.stringify({ y: Math.round(y), at: Date.now() }));
   } catch {
     /* ignore */
   }
 }
+
+// Now tab: show only starred sessions. A device preference, so it survives relaunching the app.
+const NOW_STARRED_KEY = "kubecon-scheduler:now-starred-only";
+export const loadNowStarredOnly = () => read<boolean>(NOW_STARRED_KEY, false) === true;
+export const saveNowStarredOnly = (v: boolean) => write(NOW_STARRED_KEY, v);
 
 // The schedule itself lives in Cache Storage (app-managed stale-while-revalidate),
 // so the first paint uses the last good copy and the network refresh happens behind it.

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { FacetDef, ScheduleFile, Session } from "../../../shared/types.ts";
 import { parsedFixture } from "../../../scraper/test/load.ts";
 import { buildSearch, parseRoute } from "../routes/url.ts";
-import { applyFilters, emptyFilters, facetCounts, filterKey, indexSchedule, type FilterState } from "./filter.ts";
+import { applyFilters, emptyFilters, facetCounts, filterKey, indexSchedule, nowAnchor, type FilterState, type Indexed } from "./filter.ts";
 
 function sess(id: string, facets: Record<string, string[]>, extra: Partial<Session> = {}): Session {
   return {
@@ -153,5 +153,30 @@ describe("URL contract", () => {
     const a = withSel({ cat: ["a", "b"] });
     const b = withSel({ cat: ["b", "a"] });
     expect(filterKey(a)).toBe(filterKey(b));
+  });
+});
+
+describe("nowAnchor", () => {
+  const at = (h: number, m = 0) => Date.parse(`2026-11-11T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00-07:00`);
+  const ix = (id: string, start: number, end: number): Indexed => ({ s: sess(id, {}), hay: "", startMs: start, endMs: end });
+  const list = [
+    ix("allday", at(9), at(17)),
+    ix("a", at(10), at(10, 30)),
+    ix("b", at(11), at(11, 30)),
+    ix("c", at(11, 15), at(11, 45)),
+    ix("d", at(12), at(12, 30)),
+  ];
+  it("picks the earliest recently started live session", () => {
+    expect(nowAnchor(list, at(11, 20))?.s.id).toBe("b");
+  });
+  it("between slots, picks the next one rather than an all-day item", () => {
+    expect(nowAnchor(list, at(11, 50))?.s.id).toBe("d");
+  });
+  it("before everything, picks the first", () => {
+    expect(nowAnchor(list, at(8))?.s.id).toBe("allday");
+  });
+  it("after the last start, falls back to a live one or null", () => {
+    expect(nowAnchor(list, at(12, 10))?.s.id).toBe("d");
+    expect(nowAnchor(list, at(18))).toBeNull();
   });
 });

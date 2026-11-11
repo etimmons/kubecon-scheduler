@@ -1,10 +1,11 @@
 import { useMemo } from "preact/hooks";
 import { slug } from "../../../shared/slug.ts";
 import { dayLabel, eventDate } from "../../../shared/time.ts";
-import type { Indexed } from "../filters/filter.ts";
+import { nowAnchor, type Indexed } from "../filters/filter.ts";
 import { dayTime, facetLookup, fullWhen } from "../format.ts";
 import { orphans, overlaps } from "../state/stars.ts";
 import { dismiss, navigate, openDetail, type AppState } from "../state/store.ts";
+import { hasNowAnchor, jumpToNow } from "./ScheduleView.tsx";
 import { SessionRow } from "./SessionRow.tsx";
 import { StarButton } from "./StarButton.tsx";
 
@@ -38,6 +39,7 @@ export function MySchedule({ app }: { app: AppState }) {
   const clash = overlaps(allStarred.map((i) => ({ id: i.s.id, startMs: i.startMs, endMs: i.endMs })));
   const changed = starred.filter((i) => app.stars[i.s.id]?.changedFrom);
   const ids = starred.map((i) => i.s.id);
+  const anchor = hasNowAnchor(starred, app.nowMs) ? nowAnchor(starred, app.nowMs) : null;
 
   const byDay = new Map<string, Indexed[]>();
   for (const ix of starred) {
@@ -73,6 +75,13 @@ export function MySchedule({ app }: { app: AppState }) {
             </button>
           ))}
         </nav>
+      )}
+      {anchor && (
+        <p class="summary">
+          <button type="button" class="link" onClick={() => jumpToNow()}>
+            Jump to now
+          </button>
+        </p>
       )}
       {changed.length > 0 && (
         <section class="notice-group" aria-label="Changed">
@@ -114,6 +123,7 @@ export function MySchedule({ app }: { app: AppState }) {
                 lookup={lookup}
                 starred
                 nowMs={app.nowMs}
+                anchor={ix === anchor}
                 badge={app.stars[ix.s.id]?.changedFrom ? "Changed" : clash.has(ix.s.id) ? "Overlaps" : undefined}
                 onOpen={(id) => openDetail(id, ids)}
               />

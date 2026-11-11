@@ -121,3 +121,19 @@ export function filterKey(state: FilterState): string {
     .map((k) => `${k}=${[...state.sel[k]].sort().join("|")}`);
   return [...parts, `search=${state.search.trim()}`, `past=${state.showPast}`].join("&");
 }
+
+const RECENT_MS = 60 * 60_000;
+
+/**
+ * Where "now" is in a start-sorted list: the earliest session that started within the last
+ * hour and is still running, else the first one that hasn't started yet. Long-running items
+ * (booths, all-day tracks) don't pin the anchor to the morning. Null when everything is over.
+ */
+export function nowAnchor(list: Indexed[], nowMs: number): Indexed | null {
+  let live: Indexed | null = null;
+  for (const ix of list) {
+    if (ix.startMs > nowMs) return live ?? ix;
+    if (!live && nowMs < ix.endMs && nowMs - ix.startMs <= RECENT_MS) live = ix;
+  }
+  return live;
+}

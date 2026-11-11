@@ -9,16 +9,18 @@ interface Props {
   starred: boolean;
   nowMs: number;
   badge?: string;
+  /** Mark as the list's "now" scroll target. */
+  anchor?: boolean;
   onOpen: (id: string) => void;
 }
 
-export function SessionRow({ ix, tz, lookup, starred, nowMs, badge, onOpen }: Props) {
+export function SessionRow({ ix, tz, lookup, starred, nowMs, badge, anchor, onOpen }: Props) {
   const s = ix.s;
   const cat = s.facets["all-sessions"]?.[0];
   const past = ix.endMs <= nowMs;
   const live = ix.startMs <= nowMs && nowMs < ix.endMs;
   return (
-    <li class={`row${past ? " past" : ""}`} data-id={s.id}>
+    <li class={`row${past ? " past" : ""}`} data-id={s.id} data-now={anchor ? "" : undefined}>
       <button class="row-main" type="button" onClick={() => onOpen(s.id)}>
         <span class="row-l1">
           <span class="row-time">{timeRange(s.start, s.end, tz)}</span>

@@ -222,7 +222,7 @@ The list is never unmounted. Detail and filters open as sheets on top of it, eac
 | Filter sheet | "Filters (n)" button | One collapsible group per facet with counts; "Clear all"; "Show N sessions" button |
 | Detail sheet | Tap a row | Title, time, venue › level › room, speakers, facets as chips, abstract, links; star; prev/next arrows; tap a facet chip to add it as a filter |
 | My Schedule | Second tab | Starred sessions by day; overlap flag; "Changed" and "No longer on the schedule" sections |
-| Now | Third tab | In progress, then starting within 30 min; starred sessions first |
+| Now | Third tab | In progress, then starting within 30 min; starred sessions first. An All / Starred toggle (remembered per device) narrows it to starred sessions |
 
 ### Session row
 

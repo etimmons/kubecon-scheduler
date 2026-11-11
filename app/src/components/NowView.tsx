@@ -1,9 +1,9 @@
 import { useMemo } from "preact/hooks";
-import { timeLabel, zoneAbbr } from "../../../shared/time.ts";
+import { dayLabel, eventDate, timeLabel, zoneAbbr } from "../../../shared/time.ts";
 import type { Indexed } from "../filters/filter.ts";
 import { facetLookup } from "../format.ts";
 import { isStarred } from "../state/stars.ts";
-import { openDetail, type AppState } from "../state/store.ts";
+import { openDetail, setNowStarredOnly, type AppState } from "../state/store.ts";
 import { SessionRow } from "./SessionRow.tsx";
 
 const SOON_MS = 30 * 60_000;
@@ -21,8 +21,12 @@ export function NowView({ app }: { app: AppState }) {
   const tz = app.schedule!.event.timeZone;
   const lookup = useMemo(() => facetLookup(app.schedule!.facets), [app.schedule]);
   const star = (id: string) => isStarred(app.stars, id);
-  const { live, soon } = nowAndNext(app.items, app.nowMs, star);
-  const next = live.length || soon.length ? null : app.items.find((i) => i.startMs > app.nowMs);
+  const only = app.nowStarredOnly;
+  const pool = only ? app.items.filter((i) => star(i.s.id)) : app.items;
+  const { live, soon } = nowAndNext(pool, app.nowMs, star);
+  const next = live.length || soon.length ? null : pool.find((i) => i.startMs > app.nowMs);
+  // When filtered to starred and nothing is on, say how much the full list would show.
+  const allCount = only && !live.length && !soon.length ? Object.values(nowAndNext(app.items, app.nowMs, star)).flat().length : 0;
   const ids = [...live, ...soon].map((i) => i.s.id);
   const nowIso = new Date(app.nowMs).toISOString();
 
@@ -50,18 +54,34 @@ export function NowView({ app }: { app: AppState }) {
 
   return (
     <div class="view">
-      <p class="summary">
-        Venue time {timeLabel(nowIso, tz)} {zoneAbbr(app.nowMs, tz)}
-      </p>
+      <div class="summary now-bar">
+        <span>
+          Venue time {timeLabel(nowIso, tz)} {zoneAbbr(app.nowMs, tz)}
+        </span>
+        <div class="seg" role="group" aria-label="Show">
+          <button type="button" class={only ? "" : "on"} aria-pressed={!only} onClick={() => setNowStarredOnly(false)}>
+            All
+          </button>
+          <button type="button" class={only ? "on" : ""} aria-pressed={only} onClick={() => setNowStarredOnly(true)}>
+            ★ Starred
+          </button>
+        </div>
+      </div>
       {section("In progress", live)}
       {section("Starting within 30 min", soon)}
       {!live.length && !soon.length && (
         <div class="empty">
-          <p>Nothing running right now.</p>
+          <p>{only ? "None of your starred sessions are on right now." : "Nothing running right now."}</p>
           {next && (
             <p class="dim">
-              Next up: {next.s.title} at {timeLabel(next.s.start, tz)}
+              Next{only ? " starred" : " up"}: {next.s.title} at {timeLabel(next.s.start, tz)}
+              {eventDate(next.s.start, tz) !== eventDate(app.nowMs, tz) && ` on ${dayLabel(eventDate(next.s.start, tz))}`}
             </p>
+          )}
+          {allCount > 0 && (
+            <button type="button" class="btn" onClick={() => setNowStarredOnly(false)}>
+              Show all {allCount} on now or soon
+            </button>
           )}
         </div>
       )}

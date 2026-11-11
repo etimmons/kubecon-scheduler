@@ -8,6 +8,7 @@ import { FilterSheet } from "./FilterSheet.tsx";
 import { MySchedule } from "./MySchedule.tsx";
 import { NowView } from "./NowView.tsx";
 import { ScheduleView } from "./ScheduleView.tsx";
+import { jumpToNow } from "./ScheduleView.tsx";
 import { SettingsSheet } from "./SettingsSheet.tsx";
 
 const TABS: { tab: Tab; label: string }[] = [
@@ -38,7 +39,10 @@ export function App() {
   }, []);
   useLayoutEffect(() => {
     if (!scrollKey) return;
-    window.scrollTo(0, loadScroll(scrollKey) ?? 0);
+    // A recent position wins (tab switches, filter round trips); otherwise open at the current time.
+    const saved = loadScroll(scrollKey);
+    if (saved != null) window.scrollTo(0, saved);
+    else if (!jumpToNow(false)) window.scrollTo(0, 0);
   }, [scrollKey]);
 
   useEffect(() => {

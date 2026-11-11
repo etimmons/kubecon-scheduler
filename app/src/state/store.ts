@@ -7,10 +7,12 @@ import {
   cachedSchedule,
   cleanupOldCaches,
   loadDeviceToken,
+  loadNowStarredOnly,
   loadStars,
   loadSyncMeta,
   networkSchedule,
   saveDeviceToken,
+  saveNowStarredOnly,
   saveStars,
   saveSyncMeta,
   type SyncMeta,
@@ -33,6 +35,8 @@ export interface AppState {
   sync: { state: SyncState; meta: SyncMeta; message?: string; token: string | null };
   /** IDs the detail sheet steps through (the list it was opened from). */
   detailContext: string[] | null;
+  /** Now tab shows only starred sessions. */
+  nowStarredOnly: boolean;
 }
 
 const emptyRoute: Route = {
@@ -57,6 +61,7 @@ let state: AppState = {
   stars: {},
   sync: { state: "idle", meta: {}, token: null },
   detailContext: null,
+  nowStarredOnly: loadNowStarredOnly(),
 };
 
 const listeners = new Set<() => void>();
@@ -249,6 +254,11 @@ export function toggle(id: string) {
   // Orphaned star: unstar from its snapshot.
   const r = state.stars[id];
   if (r) commitStars({ ...state.stars, [id]: { ...r, starred: !r.starred, updatedAt: new Date().toISOString() } }, true);
+}
+
+export function setNowStarredOnly(v: boolean) {
+  saveNowStarredOnly(v);
+  set({ nowStarredOnly: v });
 }
 
 export function dismiss(id: string) {

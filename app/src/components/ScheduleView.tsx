@@ -1,6 +1,6 @@
 import { useMemo } from "preact/hooks";
 import { dayLabel, eventDate, timeLabel } from "../../../shared/time.ts";
-import { activeFilterCount, applyFilters, toggleValue, type Indexed } from "../filters/filter.ts";
+import { activeFilterCount, applyFilters, nowAnchor, toggleValue, type Indexed } from "../filters/filter.ts";
 import { facetLookup } from "../format.ts";
 import { isStarred } from "../state/stars.ts";
 import { navigate, openDetail, openSheet, setFilters, type AppState } from "../state/store.ts";
@@ -34,6 +34,7 @@ export function GroupedList({
   const tz = app.schedule!.event.timeZone;
   const lookup = useMemo(() => facetLookup(app.schedule!.facets), [app.schedule]);
   const groups = groupByStart(list, tz);
+  const anchor = nowAnchor(list, app.nowMs);
   const open = (id: string) => openDetail(id, context);
   let lastDay = "";
   return (
@@ -42,7 +43,12 @@ export function GroupedList({
         const dayHead = g.day !== lastDay;
         lastDay = g.day;
         return (
-          <section key={g.key} class="group" aria-label={`${dayLabel(g.day)} ${g.label}`}>
+          <section
+            key={g.key}
+            class="group"
+            aria-label={`${dayLabel(g.day)} ${g.label}`}
+            data-now={anchor && g !== groups[0] && g.items.includes(anchor) ? "" : undefined}
+          >
             {dayHead && <h2 class="day-head">{dayLabel(g.day)}</h2>}
             <h3 class="time-head">
               {g.label}
@@ -78,6 +84,7 @@ export function ScheduleView({ app }: { app: AppState }) {
   const selDates = f.sel.date ?? [];
   const n = activeFilterCount(f);
   const ids = list.map((i) => i.s.id);
+  const canJump = hasNowAnchor(list, app.nowMs);
   const chips = Object.entries(f.sel).flatMap(([k, vals]) => (k === "date" ? [] : (vals ?? []).map((v) => ({ k, v }))));
   const badges = new Map<string, string>();
   for (const r of Object.values(app.stars)) if (r.starred && r.changedFrom) badges.set(r.id, "Changed");
@@ -133,6 +140,11 @@ export function ScheduleView({ app }: { app: AppState }) {
         <button type="button" class="link" onClick={() => setFilters({ ...f, showPast: !f.showPast })}>
           {f.showPast ? "Hide past" : "Show past"}
         </button>
+        {canJump && (
+          <button type="button" class="link" onClick={() => jumpToNow()}>
+            Jump to now
+          </button>
+        )}
       </p>
       {list.length === 0 ? (
         <div class="empty">
@@ -148,6 +160,20 @@ export function ScheduleView({ app }: { app: AppState }) {
       )}
     </div>
   );
+}
+
+/** True when the list has a "now" point below its first entry, i.e. scrolling there means something. */
+export function hasNowAnchor(list: Indexed[], nowMs: number): boolean {
+  const a = nowAnchor(list, nowMs);
+  return !!a && a !== list[0] && a.startMs !== list[0].startMs;
+}
+
+/** Scroll the current list to the element marked data-now, if any. Returns whether it did. */
+export function jumpToNow(smooth = true): boolean {
+  const el = document.querySelector("[data-now]");
+  if (!el) return false;
+  el.scrollIntoView({ block: "start", behavior: smooth ? "smooth" : "instant" });
+  return true;
 }
 
 export function goTab(tab: AppState["route"]["tab"]) {
