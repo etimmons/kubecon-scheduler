@@ -25,17 +25,22 @@ export function GroupedList({
   app,
   context,
   badges,
+  dayCounts,
 }: {
   list: Indexed[];
   app: AppState;
   context: string[];
   badges?: Map<string, string>;
+  /** Show the number of sessions next to each day heading. */
+  dayCounts?: boolean;
 }) {
   const tz = app.schedule!.event.timeZone;
   const lookup = useMemo(() => facetLookup(app.schedule!.facets), [app.schedule]);
   const groups = groupByStart(list, tz);
   const anchor = nowAnchor(list, app.nowMs);
   const open = (id: string) => openDetail(id, context);
+  const perDay = new Map<string, number>();
+  if (dayCounts) for (const g of groups) perDay.set(g.day, (perDay.get(g.day) ?? 0) + g.items.length);
   let lastDay = "";
   return (
     <div class="groups">
@@ -49,7 +54,12 @@ export function GroupedList({
             aria-label={`${dayLabel(g.day)} ${g.label}`}
             data-now={anchor && g !== groups[0] && g.items.includes(anchor) ? "" : undefined}
           >
-            {dayHead && <h2 class="day-head">{dayLabel(g.day)}</h2>}
+            {dayHead && (
+              <h2 class="day-head">
+                {dayLabel(g.day)}
+                {dayCounts && <span class="dim"> · {perDay.get(g.day)}</span>}
+              </h2>
+            )}
             <h3 class="time-head">
               {g.label}
               <span class="dim"> · {g.items.length}</span>

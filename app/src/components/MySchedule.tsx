@@ -1,17 +1,14 @@
-import { useMemo } from "preact/hooks";
 import { slug } from "../../../shared/slug.ts";
 import { dayLabel, eventDate } from "../../../shared/time.ts";
-import { nowAnchor, type Indexed } from "../filters/filter.ts";
-import { dayTime, facetLookup, fullWhen } from "../format.ts";
+import type { Indexed } from "../filters/filter.ts";
+import { dayTime, fullWhen } from "../format.ts";
 import { orphans, overlaps } from "../state/stars.ts";
 import { dismiss, navigate, openDetail, type AppState } from "../state/store.ts";
-import { hasNowAnchor, jumpToNow } from "./ScheduleView.tsx";
-import { SessionRow } from "./SessionRow.tsx";
+import { GroupedList, hasNowAnchor, jumpToNow } from "./ScheduleView.tsx";
 import { StarButton } from "./StarButton.tsx";
 
 export function MySchedule({ app }: { app: AppState }) {
   const tz = app.schedule!.event.timeZone;
-  const lookup = useMemo(() => facetLookup(app.schedule!.facets), [app.schedule]);
   const daySlug = (iso: string) => slug(dayLabel(eventDate(iso, tz)));
   const allStarred: Indexed[] = Object.values(app.stars)
     .filter((r) => r.starred)
@@ -41,12 +38,11 @@ export function MySchedule({ app }: { app: AppState }) {
   const clash = overlaps(allStarred.map((i) => ({ id: i.s.id, startMs: i.startMs, endMs: i.endMs })));
   const changed = starred.filter((i) => app.stars[i.s.id]?.changedFrom);
   const ids = starred.map((i) => i.s.id);
-  const anchor = hasNowAnchor(starred, app.nowMs) ? nowAnchor(starred, app.nowMs) : null;
-
-  const byDay = new Map<string, Indexed[]>();
+  const canJump = hasNowAnchor(starred, app.nowMs);
+  const badges = new Map<string, string>();
   for (const ix of starred) {
-    const d = eventDate(ix.s.start, tz);
-    byDay.set(d, [...(byDay.get(d) ?? []), ix]);
+    const b = app.stars[ix.s.id]?.changedFrom ? "Changed" : clash.has(ix.s.id) ? "Overlaps" : undefined;
+    if (b) badges.set(ix.s.id, b);
   }
 
   if (!allStarred.length && !allGone.length) {
@@ -78,7 +74,7 @@ export function MySchedule({ app }: { app: AppState }) {
           ))}
         </nav>
       )}
-      {anchor && (
+      {canJump && (
         <p class="summary">
           <button type="button" class="link" onClick={() => jumpToNow()}>
             Jump to now
@@ -111,28 +107,7 @@ export function MySchedule({ app }: { app: AppState }) {
           </ul>
         </section>
       )}
-      {[...byDay.entries()].map(([day, list]) => (
-        <section key={day} aria-label={dayLabel(day)}>
-          <h2 class="day-head">
-            {dayLabel(day)} <span class="dim">· {list.length}</span>
-          </h2>
-          <ul class="rows">
-            {list.map((ix) => (
-              <SessionRow
-                key={ix.s.id}
-                ix={ix}
-                tz={tz}
-                lookup={lookup}
-                starred
-                nowMs={app.nowMs}
-                anchor={ix === anchor}
-                badge={app.stars[ix.s.id]?.changedFrom ? "Changed" : clash.has(ix.s.id) ? "Overlaps" : undefined}
-                onOpen={(id) => openDetail(id, ids)}
-              />
-            ))}
-          </ul>
-        </section>
-      ))}
+      {starred.length > 0 && <GroupedList list={starred} app={app} context={ids} badges={badges} dayCounts />}
       {gone.length > 0 && (
         <section aria-label="No longer on the schedule">
           <h2 class="day-head warn-text">No longer on the schedule</h2>

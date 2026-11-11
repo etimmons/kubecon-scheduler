@@ -57,10 +57,12 @@ Pick one. All of them run the same app; they differ in where stars are kept.
 | **Docker Compose** | Yes, invite links | A machine with Docker and a hostname | [deploy/compose](deploy/compose/README.md) |
 | **Fly.io** | Yes, invite links | A Fly account (a few dollars a month) | [deploy/fly](deploy/fly/README.md) |
 | **GitHub Pages** | No, stars stay on each device | A fork of this repo | below |
+| **Vercel** | No, stars stay on each device | A fork and a Vercel account (free plan) | [deploy/vercel](deploy/vercel/README.md) |
 | **Kubernetes** | Yes, your SSO (Authelia) or invite links | A cluster | [deploy/overlays](deploy/overlays/README.md) |
 
 The image is `ghcr.io/runlevel-six/kubecon-scheduler`, multi-arch, built by GitHub Actions on every
-push to `main` (tag `main`) and release (tags like `v0.4.0`).
+push to `main` (tag `main`) and release (tags like `v0.4.0`). `latest` always points at the most
+recent release.
 
 **Sync and sign-in.** By default (`AUTH=token`) nobody signs in: you create an invite per person with
 `node server/src/admin.ts invite <name>`, and opening the link signs that device in. That is safe on any
