@@ -1,0 +1,42 @@
+# KubeCon Scheduler on one machine with Docker Compose, HTTPS by Caddy (Let's Encrypt).
+#   cp .env.example .env    # set DOMAIN; point its DNS at this machine; open ports 80 and 443
+#   docker compose up -d
+#   docker compose exec app node server/src/admin.ts invite alice
+# See deploy/compose/README.md.
+services:
+  app:
+    # Release tags: https://github.com/runlevel-six/kubecon-scheduler/pkgs/container/kubecon-scheduler
+    image: ghcr.io/runlevel-six/kubecon-scheduler:${TAG:-v0.4.0}
+    restart: unless-stopped
+    environment:
+      AUTH: token # sync with invite tokens; never trusts a login header
+      PUBLIC_URL: https://${DOMAIN}
+    volumes:
+      - data:/data # stars, tokens, last good schedule
+    read_only: true
+    tmpfs: [/tmp]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+    # No ports: only Caddy reaches the app.
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on: [app]
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  data:
+  caddy_data:
+  caddy_config:

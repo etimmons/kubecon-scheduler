@@ -4,7 +4,22 @@ import { join } from "node:path";
 import { readJson, serialized, writeAtomic } from "./store.ts";
 
 /**
- * Identity on /api/* comes from the Remote-User header that Authelia's forward-auth sets.
+ * How users are identified.
+ * - "token": invite tokens only (issued with `node server/src/admin.ts invite <user>`), used on /sync/*.
+ *   /api/* is disabled. Safe on any host, with no auth proxy in front.
+ * - "header": also trust a header set by a forward-auth proxy (Authelia) on /api/*, which lets
+ *   devices sign in and create their own tokens. Only safe when that proxy is the sole way in.
+ */
+export type AuthMode = "token" | "header";
+
+export function parseAuthMode(v: string | undefined): AuthMode {
+  const m = (v ?? "token").trim().toLowerCase();
+  if (m === "token" || m === "header") return m;
+  throw new Error(`AUTH must be "token" or "header", got "${v}"`);
+}
+
+/**
+ * Identity on /api/* (header mode) comes from the Remote-User header that Authelia's forward-auth sets.
  * It is only trustworthy because the ingress is the only thing that can reach this pod
  * (ClusterIP + NetworkPolicy) and /api/* always passes through forward-auth there.
  * The server never reads Remote-User on any other path.
@@ -37,6 +52,22 @@ export class DeviceTokens {
       await writeAtomic(this.path, JSON.stringify(f, null, 1));
     });
     return token;
+  }
+
+  async list(): Promise<{ user: string; createdAt: string; label?: string }[]> {
+    const f = await readJson<TokenFile>(this.path);
+    return (f?.tokens ?? []).map(({ user, createdAt, label }) => ({ user, createdAt, ...(label ? { label } : {}) }));
+  }
+
+  /** Remove every token for `user`. Returns how many were removed. */
+  async revoke(user: string): Promise<number> {
+    return serialized(this.path, async () => {
+      const f = (await readJson<TokenFile>(this.path)) ?? { tokens: [] };
+      const keep = f.tokens.filter((t) => t.user !== user);
+      const n = f.tokens.length - keep.length;
+      if (n) await writeAtomic(this.path, JSON.stringify({ tokens: keep }, null, 1));
+      return n;
+    });
   }
 
   async verify(req: IncomingMessage): Promise<string | null> {

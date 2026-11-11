@@ -22,6 +22,10 @@ spec:
             - name: http
               containerPort: 8080
           env:
+            # Trust Remote-User from Authelia forward-auth on /api/* (see deploy/overlays/README.md).
+            # Drop this, or set AUTH=token, if nothing in front of the pod sets that header.
+            - name: AUTH
+              value: header
             - name: USER_HEADER
               value: Remote-User
           readinessProbe:

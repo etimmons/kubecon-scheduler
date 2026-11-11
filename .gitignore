@@ -8,3 +8,5 @@ test-results/
 playwright-report/
 .DS_Store
 app/public/schedule.json
+app/public/app-config.json
+deploy/compose/.env

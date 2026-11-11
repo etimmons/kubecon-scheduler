@@ -6,7 +6,7 @@ import { Sheet } from "./Sheet.tsx";
 const STATUS: Record<string, string> = {
   idle: "Synced",
   syncing: "Syncing…",
-  "signed-out": "Signed out. Stars are saved on this device only.",
+  "signed-out": "Not signed in. Stars are saved on this device only.",
   offline: "Offline. Changes will sync when you reconnect.",
   error: "Sync failed.",
   unavailable: "Sync isn't available on this server.",
@@ -23,8 +23,62 @@ export function SettingsSheet({ app }: { app: AppState }) {
   const { sync } = app;
   const [issued, setIssued] = useState<string | null>(null);
   const [paste, setPaste] = useState("");
+  const [copied, setCopied] = useState(false);
   const close = () => closeSheet("sheet");
   const starredCount = Object.values(app.stars).filter((r) => r.starred).length;
+
+  const copy = (text: string) => {
+    navigator.clipboard?.writeText(text).then(
+      () => setCopied(true),
+      () => {},
+    );
+  };
+  // Create (header mode), copy, forget and paste a device token.
+  const tokenTools = (canCreate: boolean) => (
+    <>
+      <div class="btn-row">
+        {canCreate && (
+          <button
+            type="button"
+            class="btn"
+            onClick={async () => setIssued((await requestDeviceToken()) ?? "Couldn't create a token. Sign in first.")}
+          >
+            Create token
+          </button>
+        )}
+        {sync.token && (
+          <button type="button" class="btn" onClick={() => copy(sync.token!)}>
+            {copied ? "Copied" : "Copy this device's token"}
+          </button>
+        )}
+        {sync.token && (
+          <button type="button" class="btn" onClick={() => setDeviceToken(null)}>
+            Forget token
+          </button>
+        )}
+      </div>
+      {issued && (
+        <p>
+          <code class="token" onClick={() => copy(issued)}>
+            {issued}
+          </code>
+        </p>
+      )}
+      <form
+        class="btn-row"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (paste.trim()) setDeviceToken(paste.trim());
+          setPaste("");
+        }}
+      >
+        <input type="text" placeholder="Paste token" value={paste} onInput={(e) => setPaste((e.target as HTMLInputElement).value)} />
+        <button type="submit" class="btn">
+          Use token
+        </button>
+      </form>
+    </>
+  );
 
   return (
     <Sheet
@@ -41,67 +95,46 @@ export function SettingsSheet({ app }: { app: AppState }) {
     >
       <section class="settings">
         <h3>Sync</h3>
-        <p>
-          {STATUS[sync.state] ?? sync.state}
-          {sync.message && <span class="dim"> ({sync.message})</span>}
-        </p>
-        <p class="dim">
-          {sync.meta.user ? `Signed in as ${sync.meta.user}. ` : ""}Last sync: {ago(sync.meta.lastSync)}.
-          {sync.meta.dirty ? " Local changes waiting to sync." : ""}
-          {sync.token ? " Using a device token." : ""}
-        </p>
-        <div class="btn-row">
-          <button type="button" class="btn" onClick={() => void syncNow()}>
-            Sync now
-          </button>
-          {sync.state === "signed-out" && !sync.token && (
-            <a class="btn primary" href={signInUrl()}>
-              Sign in to sync
-            </a>
-          )}
-        </div>
-
-        <details class="facet">
-          <summary>Device token (if sign-in won't stick in the installed app)</summary>
-          <p class="dim">
-            Signed in on another browser on this device (for example Safari)? Create a token there, then paste it here in the
-            installed app.
-          </p>
-          <div class="btn-row">
-            <button
-              type="button"
-              class="btn"
-              onClick={async () => setIssued((await requestDeviceToken()) ?? "Couldn't create a token. Sign in first.")}
-            >
-              Create token
-            </button>
-            {sync.token && (
-              <button type="button" class="btn" onClick={() => setDeviceToken(null)}>
-                Forget token
-              </button>
-            )}
-          </div>
-          {issued && (
+        {sync.mode === "off" ? (
+          <p class="dim">This copy has no sync server. Stars are saved on this device only.</p>
+        ) : (
+          <>
             <p>
-              <code class="token" onClick={() => navigator.clipboard?.writeText(issued).catch(() => {})}>
-                {issued}
-              </code>
+              {STATUS[sync.state] ?? sync.state}
+              {sync.message && <span class="dim"> ({sync.message})</span>}
             </p>
-          )}
-          <form
-            class="btn-row"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (paste.trim()) setDeviceToken(paste.trim());
-              setPaste("");
-            }}
-          >
-            <input type="text" placeholder="Paste token" value={paste} onInput={(e) => setPaste((e.target as HTMLInputElement).value)} />
-            <button type="submit" class="btn">
-              Use token
-            </button>
-          </form>
-        </details>
+            <p class="dim">
+              {sync.meta.user ? `Signed in as ${sync.meta.user}. ` : ""}Last sync: {ago(sync.meta.lastSync)}.
+              {sync.meta.dirty ? " Local changes waiting to sync." : ""}
+              {sync.token ? " Using a device token." : ""}
+            </p>
+            <div class="btn-row">
+              <button type="button" class="btn" onClick={() => void syncNow()}>
+                Sync now
+              </button>
+              {sync.mode === "header" && sync.state === "signed-out" && !sync.token && (
+                <a class="btn primary" href={signInUrl()}>
+                  Sign in to sync
+                </a>
+              )}
+            </div>
+            {sync.mode === "token" && !sync.token && (
+              <p class="dim">
+                Sync uses an invite link from whoever runs this server. Open the link on each device, or paste its token below.
+              </p>
+            )}
+            {sync.mode === "token" ? tokenTools(false) : (
+              <details class="facet">
+                <summary>Device token (if sign-in won't stick in the installed app)</summary>
+                <p class="dim">
+                  Signed in on another browser on this device (for example Safari)? Create a token there, then paste it here in
+                  the installed app.
+                </p>
+                {tokenTools(true)}
+              </details>
+            )}
+          </>
+        )}
 
         <h3>Schedule</h3>
         <p class="dim">

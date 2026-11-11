@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { EventConfig } from "../../shared/types.ts";
-import { DeviceTokens, remoteUser } from "./auth.ts";
+import { type AuthMode, DeviceTokens, remoteUser } from "./auth.ts";
 import type { ScheduleKeeper } from "./refresh.ts";
 import { cleanRecords, StarStore } from "./stars.ts";
 import { SECURITY_HEADERS, send, type StaticFiles } from "./static.ts";
@@ -11,6 +11,7 @@ export interface AppDeps {
   stars: StarStore;
   tokens: DeviceTokens;
   statics: StaticFiles | null;
+  authMode: AuthMode;
   userHeader: string;
   devUser?: string;
 }
@@ -88,7 +89,12 @@ export function createHandler(d: AppDeps) {
         return send(req, res, cur.body, cur.gz, "application/json; charset=utf-8", cur.etag, "no-cache");
       }
 
+      // Tells the app how sync works here. The static (no-server) build ships {"sync":"off"}.
+      if (rawPath === "/app-config.json") return json(res, 200, { sync: d.authMode }, { "cache-control": "no-cache" });
+
       if (rawPath.startsWith("/api/")) {
+        // Token mode: nothing in front of us sets a trustworthy header, so never read one.
+        if (d.authMode !== "header") return json(res, 404, { error: "not found" });
         const user = remoteUser(req, d.userHeader, d.devUser);
         if (!user) return json(res, 401, { error: "sign in required" });
         switch (rawPath) {

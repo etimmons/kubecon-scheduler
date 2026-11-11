@@ -9,7 +9,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { StarRecord } from "../../shared/types.ts";
 import { cfg } from "../../scraper/test/load.ts";
 import { createHandler, safeReturn } from "../src/app.ts";
-import { DeviceTokens } from "../src/auth.ts";
+import { DeviceTokens, parseAuthMode } from "../src/auth.ts";
 import { nextInterval, ScheduleKeeper } from "../src/refresh.ts";
 import { cleanRecords, mergeLww, StarStore, userKey } from "../src/stars.ts";
 
@@ -43,6 +43,7 @@ beforeAll(async () => {
     stars: new StarStore(dir),
     tokens: new DeviceTokens(dir),
     statics: null,
+    authMode: "header",
     userHeader: "Remote-User",
   });
   server = createServer((q, s) => void handler(q, s));
@@ -101,6 +102,14 @@ describe("schedule refresh", () => {
     const k2 = new ScheduleKeeper(cfg, dir, null, fakeFetch, () => {});
     await k2.load();
     expect(k2.current?.file.sessions).toHaveLength(601);
+  });
+
+  it("ignores a saved or seed schedule from another event", async () => {
+    const other = await mkdtemp(join(tmpdir(), "kubecon-scheduler-other-"));
+    const k = new ScheduleKeeper({ ...cfg, id: "some-other-event" }, other, join(dir, "schedule.json"), fakeFetch, () => {});
+    await k.load();
+    expect(k.current).toBeNull();
+    await rm(other, { recursive: true, force: true });
   });
 
   it("scrapes every 30 min on event days, daily otherwise", () => {
@@ -186,5 +195,63 @@ describe("star sync", () => {
   it("merge: latest updatedAt wins, ties keep stored", () => {
     const m = mergeLww([rec("a", true, "2026-11-10T10:00:00Z")], [rec("a", false, "2026-11-10T10:00:00Z"), rec("b", true, "2026-11-10T10:00:00Z")]);
     expect(m.map((r) => [r.id, r.starred])).toEqual([["a", true], ["b", true]]);
+  });
+});
+
+describe("token auth mode (no proxy in front)", () => {
+  let tdir: string;
+  let tserver: Server;
+  let tbase: string;
+  let tokens: DeviceTokens;
+  beforeAll(async () => {
+    tdir = await mkdtemp(join(tmpdir(), "kubecon-scheduler-token-"));
+    tokens = new DeviceTokens(tdir);
+    const handler = createHandler({
+      cfg,
+      keeper: new ScheduleKeeper(cfg, tdir, null, fakeFetch, () => {}),
+      stars: new StarStore(tdir),
+      tokens,
+      statics: null,
+      authMode: "token",
+      userHeader: "Remote-User",
+      devUser: "should-be-ignored",
+    });
+    tserver = createServer((q, s) => void handler(q, s));
+    await new Promise<void>((r) => tserver.listen(0, "127.0.0.1", r));
+    tbase = `http://127.0.0.1:${(tserver.address() as AddressInfo).port}`;
+  });
+  afterAll(async () => {
+    tserver.close();
+    await rm(tdir, { recursive: true, force: true });
+  });
+
+  it("defaults to token mode and rejects unknown modes", () => {
+    expect(parseAuthMode(undefined)).toBe("token");
+    expect(parseAuthMode("Header")).toBe("header");
+    expect(() => parseAuthMode("none")).toThrow();
+  });
+
+  it("reports its mode to the app", async () => {
+    expect(await (await fetch(`${tbase}/app-config.json`)).json()).toEqual({ sync: "token" });
+    expect(await (await fetch(`${base}/app-config.json`)).json()).toEqual({ sync: "header" });
+  });
+
+  it("never trusts Remote-User: /api is off entirely", async () => {
+    for (const path of ["/api/stars", "/api/me", "/api/device-token", "/api/refresh"]) {
+      const r = await fetch(`${tbase}${path}`, { method: path.endsWith("stars") || path.endsWith("me") ? "GET" : "POST", headers: { "remote-user": "alice" } });
+      expect(r.status, path).toBe(404);
+    }
+  });
+
+  it("invite tokens sync, and revoking them cuts access but keeps stars", async () => {
+    const t = await tokens.issue("bob", "test");
+    const auth = { authorization: `Bearer ${t}`, "content-type": "application/json" };
+    const r = await fetch(`${tbase}/sync/stars?event=${cfg.id}`, { method: "PUT", headers: auth, body: JSON.stringify({ records: [rec("X", true, "2026-11-10T10:00:00Z")] }) });
+    expect(r.status).toBe(200);
+    expect((await r.json()).user).toBe("bob");
+    expect((await tokens.list()).map((x) => x.user)).toEqual(["bob"]);
+    expect(await tokens.revoke("bob")).toBe(1);
+    expect((await fetch(`${tbase}/sync/stars?event=${cfg.id}`, { headers: auth })).status).toBe(401);
+    expect(await new StarStore(tdir).get("bob", cfg.id)).toHaveLength(1);
   });
 });

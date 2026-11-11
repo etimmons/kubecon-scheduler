@@ -1,11 +1,12 @@
-// Usage: node scraper/src/cli.ts [out.json] [--fixture path.json[.gz]]
+// Usage: [EVENT_CONFIG=events/x.json] node scraper/src/cli.ts [out.json] [--fixture path.json[.gz]]
 import { readFileSync, writeFileSync } from "node:fs";
 import { gunzipSync } from "node:zlib";
 import type { EventConfig } from "../../shared/types.ts";
 import { fetchSchedule } from "./fetch.ts";
 import { parseSessionize, sourceHash } from "./parse.ts";
 
-const cfg = JSON.parse(readFileSync(new URL("../../events/kccncna2026.json", import.meta.url), "utf8")) as EventConfig;
+const cfgPath = process.env.EVENT_CONFIG ?? new URL("../../events/kccncna2026.json", import.meta.url);
+const cfg = JSON.parse(readFileSync(cfgPath, "utf8")) as EventConfig;
 const args = process.argv.slice(2);
 const fi = args.indexOf("--fixture");
 const out = args.find((a, i) => !a.startsWith("--") && (fi < 0 || i !== fi + 1)) ?? "app/public/schedule.json";

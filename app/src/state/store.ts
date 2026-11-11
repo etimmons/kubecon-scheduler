@@ -8,14 +8,17 @@ import {
   cleanupOldCaches,
   loadDeviceToken,
   loadNowStarredOnly,
+  loadSyncMode,
   loadStars,
   loadSyncMeta,
   networkSchedule,
   saveDeviceToken,
   saveNowStarredOnly,
+  saveSyncMode,
   saveStars,
   saveSyncMeta,
   type SyncMeta,
+  type SyncMode,
 } from "./storage.ts";
 import { detectChanges, dismissChange, mergeStars, toggleStar, type StarMap } from "./stars.ts";
 
@@ -32,7 +35,7 @@ export interface AppState {
   nowMs: number;
   defaultShowPast: boolean;
   stars: StarMap;
-  sync: { state: SyncState; meta: SyncMeta; message?: string; token: string | null };
+  sync: { state: SyncState; meta: SyncMeta; message?: string; token: string | null; mode: SyncMode };
   /** IDs the detail sheet steps through (the list it was opened from). */
   detailContext: string[] | null;
   /** Now tab shows only starred sessions. */
@@ -59,7 +62,7 @@ let state: AppState = {
   nowMs: Date.now(),
   defaultShowPast: false,
   stars: {},
-  sync: { state: "idle", meta: {}, token: null },
+  sync: { state: "idle", meta: {}, token: null, mode: loadSyncMode() },
   detailContext: null,
   nowStarredOnly: loadNowStarredOnly(),
 };
@@ -144,6 +147,7 @@ export async function boot(): Promise<void> {
   const p = new URLSearchParams(location.search).get("now");
   if (p && !Number.isNaN(Date.parse(p))) clockOffset = Date.parse(p) - Date.now();
   set({ nowMs: nowMs() });
+  acceptInviteLink();
 
   void cleanupOldCaches();
   const cached = await cachedSchedule();
@@ -181,7 +185,30 @@ export async function boot(): Promise<void> {
   setInterval(() => {
     if (document.visibilityState === "visible") void syncNow({ quiet: true });
   }, 45_000);
-  void syncNow();
+  void loadSyncConfig().then(() => syncNow());
+}
+
+/** An invite link (…/#token=ks_…) signs this device in; the token never reaches the server's logs. */
+function acceptInviteLink() {
+  const m = /(?:^#|&)token=(ks_[A-Za-z0-9_-]{20,})/.exec(location.hash);
+  if (!m) return;
+  saveDeviceToken(m[1]);
+  history.replaceState(history.state, "", location.pathname + location.search);
+}
+
+/** Ask the server how sync works here (token, header, or off for the static build). Keeps the cached answer offline. */
+async function loadSyncConfig() {
+  try {
+    const res = await fetch("app-config.json", { cache: "no-cache", headers: { accept: "application/json" } });
+    if (!res.ok || !(res.headers.get("content-type") ?? "").includes("json")) return;
+    const mode = ((await res.json()) as { sync?: string }).sync;
+    if (mode === "header" || mode === "token" || mode === "off") {
+      saveSyncMode(mode);
+      set({ sync: { ...state.sync, mode } });
+    }
+  } catch {
+    /* offline: keep the cached mode */
+  }
 }
 
 // ---- navigation ------------------------------------------------------------------------------
@@ -272,6 +299,9 @@ let syncing = false;
 export async function syncNow(opts: { quiet?: boolean } = {}): Promise<void> {
   if (!state.schedule || syncing) return;
   const eventId = state.schedule.event.id;
+  // No server to sync with, or token-only and this device has no token: don't ask.
+  if (state.sync.mode === "off") return set({ sync: { ...state.sync, state: "unavailable", message: undefined } });
+  if (state.sync.mode === "token" && !state.sync.token) return set({ sync: { ...state.sync, state: "signed-out", message: undefined } });
   syncing = true;
   if (!opts.quiet) set({ sync: { ...state.sync, state: "syncing" } });
   const sent = state.stars;

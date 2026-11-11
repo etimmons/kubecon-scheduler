@@ -3,7 +3,7 @@ import { createServer } from "node:http";
 import { resolve } from "node:path";
 import type { EventConfig } from "../../shared/types.ts";
 import { createHandler } from "./app.ts";
-import { DeviceTokens } from "./auth.ts";
+import { DeviceTokens, parseAuthMode } from "./auth.ts";
 import { ScheduleKeeper } from "./refresh.ts";
 import { StarStore } from "./stars.ts";
 import { StaticFiles } from "./static.ts";
@@ -14,8 +14,10 @@ const dataDir = resolve(env.DATA_DIR ?? "data");
 const staticDir = resolve(env.STATIC_DIR ?? "dist/app");
 const eventFile = resolve(env.EVENT_CONFIG ?? "events/kccncna2026.json");
 const seed = env.SEED_SCHEDULE ? resolve(env.SEED_SCHEDULE) : null;
+const authMode = parseAuthMode(env.AUTH);
 const userHeader = env.USER_HEADER ?? "Remote-User";
 const devUser = env.DEV_USER || undefined;
+if (devUser && authMode !== "header") throw new Error("DEV_USER only applies with AUTH=header");
 const scrape = env.SCRAPE !== "off";
 
 const cfg = JSON.parse(readFileSync(eventFile, "utf8")) as EventConfig;
@@ -31,12 +33,13 @@ const handler = createHandler({
   stars: new StarStore(dataDir),
   tokens: new DeviceTokens(dataDir),
   statics: await StaticFiles.load(staticDir),
+  authMode,
   userHeader,
   devUser,
 });
 
 const server = createServer((req, res) => void handler(req, res));
-server.listen(port, () => console.log(`kubecon-scheduler listening on :${port} (data ${dataDir})`));
+server.listen(port, () => console.log(`kubecon-scheduler listening on :${port} (data ${dataDir}, auth ${authMode})`));
 
 for (const sig of ["SIGTERM", "SIGINT"] as const) {
   process.on(sig, () => {

@@ -63,6 +63,15 @@ export function saveScroll(key: string, y: number): void {
   }
 }
 
+// How this server does sync, from app-config.json; cached so it's known offline.
+export type SyncMode = "header" | "token" | "off";
+const SYNC_MODE_KEY = "kubecon-scheduler:sync-mode";
+export function loadSyncMode(): SyncMode {
+  const v = read<string>(SYNC_MODE_KEY, "header");
+  return v === "token" || v === "off" ? v : "header";
+}
+export const saveSyncMode = (m: SyncMode) => write(SYNC_MODE_KEY, m);
+
 // Now tab: show only starred sessions. A device preference, so it survives relaunching the app.
 const NOW_STARRED_KEY = "kubecon-scheduler:now-starred-only";
 export const loadNowStarredOnly = () => read<boolean>(NOW_STARRED_KEY, false) === true;

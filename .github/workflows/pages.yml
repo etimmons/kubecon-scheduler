@@ -1,0 +1,49 @@
+# Static copy on GitHub Pages: the full app with stars kept on each device, no server, no sync.
+# Off unless you opt in: Settings > Pages > Source: GitHub Actions, then
+# Settings > Secrets and variables > Actions > Variables: PAGES = on.
+name: pages
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 * * * *" # hourly schedule refresh; GitHub may run it late
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: vars.PAGES == 'on'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # If the live scrape fails, the job fails and Pages keeps serving the last good copy.
+      - run: npm run scrape
+      - run: echo '{"sync":"off"}' > app/public/app-config.json
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/app
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

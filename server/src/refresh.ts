@@ -70,12 +70,12 @@ export class ScheduleKeeper {
     return join(this.dir, "schedule.last-good.json");
   }
 
-  /** Load the live file, else the last good copy, else the seed baked into the image. */
+  /** Load the live file, else the last good copy, else the seed baked into the image. Only this event's. */
   async load(): Promise<void> {
     for (const p of [this.livePath, this.lastGoodPath, this.seedPath]) {
       if (!p) continue;
       const f = await readJson<ScheduleFile>(p);
-      if (f?.schemaVersion === 1 && Array.isArray(f.sessions) && f.sessions.length) {
+      if (f?.schemaVersion === 1 && f.event?.id === this.cfg.id && Array.isArray(f.sessions) && f.sessions.length) {
         this.current = serve(f);
         this.status.sessions = f.sessions.length;
         this.log(`schedule: loaded ${f.sessions.length} sessions from ${p}`);

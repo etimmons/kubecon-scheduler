@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 // Runs against the production build served by the real server (service worker enabled):
-//   npm run build && DEV_USER=dev SEED_SCHEDULE=dist/app/schedule.json SCRAPE=off npm start
+//   npm run build && AUTH=header DEV_USER=dev SEED_SCHEDULE=dist/app/schedule.json SCRAPE=off npm start
 //   PROD_URL=http://localhost:8080 npx playwright test e2e/offline.spec.ts
 const PROD = process.env.PROD_URL;
 test.skip(!PROD, "set PROD_URL to run against the production server");

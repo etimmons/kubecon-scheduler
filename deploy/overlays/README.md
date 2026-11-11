@@ -10,6 +10,10 @@ kubectl apply -k deploy/overlays/home
 
 Checklist:
 
+- The base sets `AUTH=header`, so the server trusts `Remote-User` on `/api/*`. No forward-auth
+  proxy? Patch it to `AUTH=token` and invite people with
+  `kubectl exec deploy/kubecon-scheduler -- node server/src/admin.ts invite <name>` instead.
+
 - `/api/*` must pass through Authelia forward-auth, and Authelia must return `Remote-User`.
 - The public route must **strip** any client-sent `Remote-User` header. The server only reads it
   on `/api/*` and rejects odd paths (`//`, `%`, `..`), but stripping it at the edge closes the gap

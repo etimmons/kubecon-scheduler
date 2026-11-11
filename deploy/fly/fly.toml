@@ -1,0 +1,34 @@
+# KubeCon Scheduler on Fly.io. See deploy/fly/README.md.
+app = "CHANGE-ME"             # must be unique on Fly
+primary_region = "den"        # pick one near the venue (fly platform regions)
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  AUTH = "token"
+  PUBLIC_URL = "https://CHANGE-ME.fly.dev"
+
+# Stars, tokens and the last good schedule. One volume means one machine: don't scale out.
+[[mounts]]
+  source = "data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # Keep it running so the schedule refresh timer keeps going (every 30 min on event days).
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    path = "/healthz"
+    timeout = "5s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
