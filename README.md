@@ -56,6 +56,7 @@ Pick one. All of them run the same app; they differ in where stars are kept.
 | --- | --- | --- | --- |
 | **Docker Compose** | Yes, invite links | A machine with Docker and a hostname | [deploy/compose](deploy/compose/README.md) |
 | **Fly.io** | Yes, invite links | A Fly account (a few dollars a month) | [deploy/fly](deploy/fly/README.md) |
+| **Vercel** | No, stars stay on each device | A Vercel account and this repo | below |
 | **GitHub Pages** | No, stars stay on each device | A fork of this repo | below |
 | **Kubernetes** | Yes, your SSO (Authelia) or invite links | A cluster | [deploy/overlays](deploy/overlays/README.md) |
 
@@ -66,6 +67,24 @@ push to `main` (tag `main`) and release (tags like `v0.4.0`).
 `node server/src/admin.ts invite <name>`, and opening the link signs that device in. That is safe on any
 host. `AUTH=header` instead trusts a `Remote-User` header from a forward-auth proxy such as Authelia, and
 is only safe when that proxy is the only way to reach the server; the Kubernetes base uses it.
+
+**Vercel (no server).** Import the repository with the Root Directory set to the repository root
+(`.`). The committed `vercel.json` selects Vite, runs `npm run build:static`, and serves `dist/app`.
+Use Node.js 24 or newer. The static build fetches the current schedule and writes `app-config.json`
+with sync disabled; no environment variables are required for the default event. A failed schedule
+fetch fails the deployment, so Vercel keeps serving the previous successful deployment.
+
+The regular `npm run build` only builds the interface. Publishing `dist` instead of `dist/app`
+puts the interface at `/app/` and leaves `/` returning 404; omitting the scrape leaves the app
+without `schedule.json`. The static build handles both requirements. Redeploy to publish schedule
+changes. Offline use and stars work in each browser, but cross-device sync requires one of the
+server deployments above.
+
+To build the same static site locally without fetching live data:
+
+```sh
+npm run build:static -- --fixture scraper/fixtures/sessionize-all-2026-11-10.json.gz
+```
 
 **GitHub Pages (no server).** Fork the repo, then in the fork: Settings > Pages > Source: **GitHub
 Actions**; Settings > Secrets and variables > Actions > Variables: add `PAGES` = `on`; then run the
