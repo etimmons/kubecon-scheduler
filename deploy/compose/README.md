@@ -29,7 +29,8 @@ and paste it in the installed app's Settings. Anyone with the link can use it, s
 
 - Data (stars, tokens, the last good schedule) is in the `data` volume. Back it up with
   `docker compose cp app:/data ./backup`.
-- Upgrade: set `TAG` in `.env` to a newer release, then `docker compose pull && docker compose up -d`.
+- Upgrade: `docker compose pull && docker compose up -d`. That moves to the newest release while `TAG`
+  is `latest`; with a pinned `TAG`, change it in `.env` first.
 - Just trying it on a laptop? Skip Caddy:
-  `docker run --rm -p 8080:8080 -v ks-data:/data ghcr.io/runlevel-six/kubecon-scheduler:v0.4.0`,
+  `docker run --rm -p 8080:8080 -v ks-data:/data ghcr.io/runlevel-six/kubecon-scheduler:latest`,
   then open http://localhost:8080 (localhost counts as secure, so install and offline work too).

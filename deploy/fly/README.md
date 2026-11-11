@@ -25,5 +25,7 @@ Notes:
 - Keep it at one machine (`fly scale count 1`): stars are files on the volume.
 - `auto_stop_machines = "off"` keeps the schedule refresh running. If you'd rather it sleep when idle,
   set it to `"stop"`; it then refreshes the schedule when it wakes.
-- Upgrade: `fly deploy --build-arg TAG=v0.4.1` (or change `ARG TAG` in the Dockerfile).
+- Upgrade: `fly deploy --no-cache` builds on the newest release (`latest`; `--no-cache` keeps the builder
+  from reusing an older copy). To pin one, `fly deploy --build-arg TAG=v0.4.2`, or change `ARG TAG` in
+  the Dockerfile.
 - A custom domain: `fly certs add schedule.example.com`, then update `PUBLIC_URL`.

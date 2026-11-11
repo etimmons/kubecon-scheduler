@@ -6,7 +6,7 @@
 services:
   app:
     # Release tags: https://github.com/runlevel-six/kubecon-scheduler/pkgs/container/kubecon-scheduler
-    image: ghcr.io/runlevel-six/kubecon-scheduler:${TAG:-v0.4.0}
+    image: ghcr.io/runlevel-six/kubecon-scheduler:${TAG:-latest}
     restart: unless-stopped
     environment:
       AUTH: token # sync with invite tokens; never trusts a login header

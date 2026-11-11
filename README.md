@@ -61,7 +61,7 @@ Pick one. All of them run the same app; they differ in where stars are kept.
 | **Kubernetes** | Yes, your SSO (Authelia) or invite links | A cluster | [deploy/overlays](deploy/overlays/README.md) |
 
 The image is `ghcr.io/runlevel-six/kubecon-scheduler`, multi-arch, built by GitHub Actions on every
-push to `main` (tag `main`) and release (tags like `v0.4.0`). `latest` always points at the most
+push to `main` (tag `main`) and release (tags like `v0.4.2`). `latest` always points at the most
 recent release.
 
 **Sync and sign-in.** By default (`AUTH=token`) nobody signs in: you create an invite per person with
